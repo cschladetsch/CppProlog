@@ -24,7 +24,7 @@ A modern, high-performance Prolog interpreter implemented in C++23 with comprehe
 ### Building
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/cschladetsch/CppProlog
 cd CppLProlog
 mkdir build
 cd build
@@ -268,14 +268,6 @@ if (result) {
 }
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
-
 ### Code Style
 
 - Follow modern C++23 practices
@@ -283,10 +275,6 @@ if (result) {
 - Include comprehensive tests
 - Document public APIs
 - Follow existing naming conventions
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 
