@@ -59,10 +59,11 @@ private:
     std::vector<Choice> choice_stack_;
     size_t max_depth_;
     size_t current_depth_;
+    bool termination_requested_;
     
 public:
     explicit Resolver(const Database& db, size_t max_depth = 1000) 
-        : database_(db), max_depth_(max_depth), current_depth_(0) {}
+        : database_(db), max_depth_(max_depth), current_depth_(0), termination_requested_(false) {}
     
     std::vector<Solution> solve(const TermPtr& query);
     std::vector<Solution> solve(const TermList& goals);

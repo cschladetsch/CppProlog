@@ -46,6 +46,7 @@ void Resolver::solveWithCallback(const TermPtr& query,
                                 std::function<bool(const Solution&)> callback) {
     choice_stack_.clear();
     current_depth_ = 0;
+    termination_requested_ = false;
     
     Substitution empty_bindings;
     solveGoals({query}, empty_bindings, callback);
@@ -55,6 +56,7 @@ void Resolver::solveWithCallback(const TermList& goals,
                                 std::function<bool(const Solution&)> callback) {
     choice_stack_.clear();
     current_depth_ = 0;
+    termination_requested_ = false;
     
     Substitution empty_bindings;
     solveGoals(goals, empty_bindings, callback);
@@ -68,7 +70,11 @@ bool Resolver::solveGoals(const TermList& goals, const Substitution& bindings,
     
     if (goals.empty()) {
         Solution solution{bindings};
-        return callback(solution);
+        bool continue_search = callback(solution);
+        if (!continue_search) {
+            termination_requested_ = true;
+        }
+        return continue_search;
     }
     
     TermPtr current_goal = Unification::applySubstitution(goals[0], bindings);
@@ -85,6 +91,11 @@ bool Resolver::solveGoals(const TermList& goals, const Substitution& bindings,
     
     // Try each matching clause
     for (auto& clause : matching_clauses) {
+        // Check if termination was requested
+        if (termination_requested_) {
+            break;
+        }
+        
         current_depth_++;
         
         if (current_depth_ > max_depth_) {
@@ -110,15 +121,9 @@ bool Resolver::solveGoals(const TermList& goals, const Substitution& bindings,
             }
             
             // Recursively solve new goals
-            bool continue_search = solveGoals(new_goals, new_bindings, callback);
-            if (continue_search) {
+            if (solveGoals(new_goals, new_bindings, callback)) {
                 found_any = true;
                 // Continue to find more solutions
-            } else {
-                // Callback returned false, stop searching
-                found_any = true; // We found at least one solution
-                current_depth_--;
-                return false; // Stop the search
             }
         }
         

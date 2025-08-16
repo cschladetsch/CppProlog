@@ -110,17 +110,23 @@ print_header "3. Example Programs Showcase"
 
 print_subheader "Basic Logic Programming Example"
 print_info "Demonstrates facts, rules, and queries"
-run_command "./examples/basic_example"
+cd ..
+run_command "./build/examples/basic_example"
+cd build
 pause_demo
 
 print_subheader "Family Tree Reasoning"
 print_info "Complex relationship inference with backtracking"
-run_command "./examples/family_tree"
+cd ..
+run_command "./build/examples/family_tree"
+cd build
 pause_demo
 
 print_subheader "Advanced List Processing"
 print_info "Recursive list operations and pattern matching"
-run_command "./examples/list_processing"
+cd ..
+run_command "./build/examples/list_processing"
+cd build
 pause_demo
 
 # Performance benchmarks
@@ -142,8 +148,8 @@ echo -e "${CYAN}  ?- :quit${NC}                # Exit interpreter"
 echo
 
 # Load the family tree and start interactive mode
-echo -e "${MAGENTA}$ ./src/prolog_interpreter ../examples/family.pl${NC}"
-./src/prolog_interpreter ../examples/family.pl
+echo -e "${MAGENTA}$ ./src/prolog_interpreter examples/family.pl${NC}"
+timeout 10 ./src/prolog_interpreter examples/family.pl || echo -e "${YELLOW}Interactive mode timed out - continuing demo...${NC}"
 
 # Architecture highlights
 print_header "6. System Architecture Highlights"
