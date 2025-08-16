@@ -11,3 +11,6 @@ target_link_libraries(list_processing prolog_core)
 
 add_executable(arithmetic arithmetic.cpp)
 target_link_libraries(arithmetic prolog_core)
+
+add_executable(docker_example docker_example.cpp)
+target_link_libraries(docker_example prolog_core)

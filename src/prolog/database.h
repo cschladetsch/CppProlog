@@ -12,7 +12,8 @@ namespace prolog {
 class Database {
 private:
     std::vector<ClausePtr> clauses_;
-    std::unordered_map<std::string, std::vector<size_t>> index_;\
+    std::unordered_map<std::string, std::vector<size_t>> index_;
+    std::unordered_map<std::string, std::vector<size_t>> first_arg_index_;\
     
 public:
     void addClause(ClausePtr clause);
@@ -21,6 +22,8 @@ public:
     
     std::vector<ClausePtr> findClauses(const std::string& functor, size_t arity) const;
     std::vector<ClausePtr> findMatchingClauses(const TermPtr& goal) const;
+    std::vector<ClausePtr> findClausesWithFirstArg(const std::string& functor, size_t arity, 
+                                                   const TermPtr& first_arg) const;
     
     void clear();
     size_t size() const { return clauses_.size(); }
@@ -33,6 +36,8 @@ public:
 private:
     std::string makeKey(const std::string& functor, size_t arity) const;
     std::string extractFunctorArity(const TermPtr& term) const;
+    std::string makeFirstArgKey(const std::string& functor, size_t arity, const TermPtr& first_arg) const;
+    std::string extractFirstArgKey(const TermPtr& head) const;
 };
 
 }

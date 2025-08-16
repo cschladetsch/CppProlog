@@ -234,4 +234,13 @@ Substitution Resolver::filterBindings(const Substitution& bindings,
     return filtered;
 }
 
+void Resolver::performCut() {
+    cut_encountered_ = true;
+    
+    // Remove all choice points at or above the current cut level
+    while (!choice_stack_.empty() && choice_stack_.back().cut_level >= current_cut_level_) {
+        choice_stack_.pop_back();
+    }
+}
+
 }

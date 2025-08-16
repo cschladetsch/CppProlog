@@ -61,6 +61,10 @@ std::vector<Token> Lexer::tokenize() {
                     tokens.emplace_back(Token::INVALID, ":", start_pos);
                 }
                 break;
+            case '!':
+                advance();
+                tokens.emplace_back(Token::ATOM, "!", start_pos);
+                break;
             case '"':
                 tokens.emplace_back(Token::STRING, readString(), start_pos);
                 break;

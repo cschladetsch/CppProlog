@@ -626,7 +626,7 @@ flowchart TD
     subgraph "Runtime Processing Errors"
         RESOLUTION["🔄 Resolution Engine<br/>Query processing"]
         UNIFICATION["🔗 Unification Process<br/>Term matching"]
-        BUILTINS["⚡ Built-in Predicates<br/>System predicates"]
+        BUILTINS["⚡ Built-in Predicates<br/>• Arithmetic Evaluation<br/>• Type Checking<br/>• Comparison Operations<br/>• List Processing<br/>• Control Flow<br/>• I/O Operations"]
         
         RUNTIME_ERROR_CHECK{"⚠️ Runtime Errors?<br/>Processing failures"}
         
@@ -835,7 +835,7 @@ flowchart TB
         
         DATABASE_RO["🗄️ Read-Only Database<br/>• Clause storage<br/>• Index structures<br/>• Concurrent read access<br/>• No modification during queries"]
         
-        BUILTIN_REGISTRY["⚡ Built-in Predicate Registry<br/>• Function pointers<br/>• Stateless operations<br/>• Thread-safe by design<br/>• Global accessibility"]
+        BUILTIN_REGISTRY["⚡ Built-in Predicate Registry<br/>• Function pointers<br/>• Stateless operations<br/>• Thread-safe by design<br/>• Global accessibility<br/>• Comprehensive predicate library<br/>• Modern C++ implementation"]
     end
     
     subgraph "Thread-Local State"

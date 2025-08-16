@@ -5,14 +5,14 @@ A modern, high-performance Prolog interpreter implemented in C++23 with comprehe
 ## Features
 
 - **Modern C++23**: Leverages the latest C++ features for clean, efficient code
-- **Complete Prolog Implementation**: Full support for facts, rules, queries, and unification
+- **Complete Prolog Implementation**: Full support for facts, rules, queries, unification, and cut operator
 - **High Performance**: Optimized resolution engine with memory pooling and release-mode builds
-- **Extensive Testing**: Comprehensive test suite using Google Test with 100% component coverage
+- **Extensive Testing**: Comprehensive test suite using Google Test with 173 tests and complete coverage
 - **Performance Benchmarking**: Google Benchmark integration for resolution performance analysis
 - **Rich Examples**: Multiple example programs demonstrating various Prolog concepts
-- **Built-in Predicates**: Support for list operations, type checking, and logical operations
+- **Built-in Predicates**: Comprehensive set including list operations, arithmetic, type checking, and control structures
 - **Interactive REPL**: Full-featured interactive mode with colored output
-- **Robust Architecture**: ~2,200 lines of carefully crafted C++ implementing Prolog semantics
+- **Robust Architecture**: ~2,200 lines of carefully crafted C++ implementing Prolog semantics with performance optimizations
 - **CMake Build System**: Modern build configuration with dependency management
 
 ## Quick Start
@@ -46,27 +46,29 @@ make -j$(nproc)
 
 ### Running
 
+All executables are now built in the `build/bin/` directory:
+
 ```bash
 # Interactive mode
-./src/prolog_interpreter
+./bin/prolog_interpreter
 
 # Load a Prolog file
-./src/prolog_interpreter examples/family.pl
+./bin/prolog_interpreter examples/family.pl
 
 # Execute a query and exit
-./src/prolog_interpreter --query "parent(tom, X)" examples/family.pl
+./bin/prolog_interpreter --query "parent(tom, X)" examples/family.pl
 
-# Run comprehensive test suite
-./tests/prolog_tests
+# Run comprehensive test suite (173 tests)
+./bin/prolog_tests
 
 # Run example programs
-./examples/basic_example
-./examples/family_tree
-./examples/list_processing
-./examples/arithmetic
+./bin/basic_example
+./bin/family_tree
+./bin/list_processing
+./bin/arithmetic
 
 # Run performance benchmarks (use Release build)
-./benchmarks/prolog_benchmarks
+./bin/prolog_benchmarks
 
 # Run interactive demo
 ../demo.sh
@@ -170,28 +172,50 @@ true
 
 The interpreter provides a comprehensive set of built-in predicates for practical Prolog programming:
 
+### Arithmetic Operations
+- `is/2` - Arithmetic evaluation with full expression support
+  - Supports: `+`, `-`, `*`, `/`, `//` (integer division), `mod`, unary `-`, `abs`
+  - Example: `X is 2 + 3 * 4` evaluates to `X = 14`
+- `+/3`, `-/3`, `*/3`, `//3` - Direct arithmetic predicates
+
+### Comparison Operators
+- `=/2` - Unification operator
+- `\=/2` - Negation of unification  
+- `</2`, `>/2` - Arithmetic comparison (less than, greater than)
+- `=</2`, `>=/2` - Arithmetic comparison (less/equal, greater/equal)
+- `==/2`, `\==/2` - Strict term equality/inequality for structural comparison
+
 ### List Operations
 - `append/3` - List concatenation with backtracking
-- `member/2` - List membership testing
-- `length/2` - Calculate or verify list length
+- `member/2` - List membership testing with backtracking
+- `length/2` - Calculate or verify list length with bidirectional support
 
-### Type Checking
+### Type Checking Predicates
 - `var/1` - Test if term is an unbound variable
 - `nonvar/1` - Test if term is bound (not a variable)
 - `atom/1` - Test if term is an atom
 - `number/1` - Test if term is a number (integer or float)
-- `integer/1` - Test if term is an integer
-- `float/1` - Test if term is a floating-point number
+- `integer/1` - Test if term is specifically an integer
+- `float/1` - Test if term is specifically a float
+- `compound/1` - Test if term is a compound structure
+- `ground/1` - Test if term is fully instantiated (no variables)
 
-### Unification and Comparison
-- `=/2` - Explicit unification operator
-- `==/2` - Term equality testing
-- `\=/2` - Negation of unification
-
-### Control Flow
-- `true/0` - Always succeeds (useful in conditionals)
+### Control Structures
+- `true/0` - Always succeeds
 - `fail/0` - Always fails (forces backtracking)
-- `!/0` - Cut operator (planned for future release)
+- `\+/1` - Negation as failure (succeeds if goal fails)
+- `!/0` - Cut operator for preventing backtracking
+
+### Input/Output
+- `write/1` - Output a term to stdout
+- `nl/0` - Output a newline character
+
+### Advanced Features
+- **First Argument Indexing**: Database indexing for improved query performance
+- **Comprehensive term ordering**: Variables < Numbers < Atoms < Strings < Compounds < Lists
+- **Modern C++ implementation**: Uses STL algorithms like `std::lexicographical_compare`
+- **Efficient comparison**: Map-based comparator system with lambda functions
+- **Docker Support**: Full containerization with multi-stage builds
 
 ## Testing
 

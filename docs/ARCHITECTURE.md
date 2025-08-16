@@ -45,7 +45,7 @@ graph TB
         
         UNI["🔗 Unification Engine<br/>• Robinson's Algorithm<br/>• Occurs Check<br/>• Substitution Composition<br/>• Variable Dereferencing"]
         
-        BIP["⚡ Built-in Predicates<br/>• List Operations<br/>• Type Checking<br/>• Comparison Operators<br/>• Control Flow"]
+        BIP["⚡ Built-in Predicates<br/>• Arithmetic Evaluation<br/>• Type Checking System<br/>• Comparison Operators<br/>• List Operations<br/>• Control Structures<br/>• I/O Operations"]
     end
     
     subgraph "Data Management Layer"
@@ -563,11 +563,37 @@ static std::unordered_map<std::string, BuiltinHandler> builtins_;
 builtins_["functor/arity"] = handler_function;
 ```
 
-#### Arithmetic Integration
+#### Built-in Predicate Categories
 
-- **Expression Evaluation**: `is/2` predicate evaluates arithmetic expressions
-- **Comparison Operators**: `</2`, `>/2`, `=</2`, `>=/2`, `=:=/2`, `=\\=/2`
-- **Type Coercion**: Automatic integer/float conversion
+**Arithmetic Operations**:
+- `is/2` - Full expression evaluation supporting `+`, `-`, `*`, `/`, `//`, `mod`, unary `-`, `abs`
+- `+/3`, `-/3`, `*/3`, `//3` - Direct arithmetic predicates
+
+**Comparison Operators**:
+- `=/2`, `\\=/2` - Unification and negation
+- `</2`, `>/2`, `=</2`, `>=/2` - Arithmetic comparison with standard Prolog term ordering
+- Uses modern C++ STL algorithms (`std::lexicographical_compare`)
+
+**Type Checking Predicates**:
+- `var/1`, `nonvar/1` - Variable binding tests
+- `atom/1`, `number/1`, `integer/1`, `float/1` - Type classification
+- `compound/1`, `ground/1` - Structure and instantiation tests
+
+**List Operations**:
+- `append/3`, `member/2` - List manipulation with backtracking
+- Modern implementation with STL integration
+
+**Control Structures**:
+- `true/0`, `fail/0` - Basic control
+- `\\+/1` - Negation as failure (basic implementation)
+
+**Input/Output**:
+- `write/1`, `nl/0` - Basic output operations
+
+**Advanced Features**:
+- Map-based comparator system with lambda functions
+- Efficient term ordering implementation
+- Recursive ground checking for complex terms
 
 ### Interpreter (`src/prolog/interpreter.h/cpp`)
 

@@ -476,29 +476,53 @@ public:
 
 ### Available Built-ins
 
-#### Arithmetic
-- `is/2` - Arithmetic evaluation: `X is 2 + 3`
-- `+/3`, `-/3`, `*/3`, `//3` - Binary arithmetic operations
+#### Arithmetic Operations
+- `is/2` - Arithmetic evaluation with full expression support
+  - Supports: `+`, `-`, `*`, `/`, `//` (integer division), `mod`, unary `-`, `abs`
+  - Example: `X is 2 + 3 * 4` evaluates to `X = 14`
+- `+/3`, `-/3`, `*/3`, `//3` - Direct arithmetic predicates
+  - Example: `+(2, 3, X)` unifies `X = 5`
 
-#### Comparison  
-- `=/2` - Unification: `X = Y`
-- `\\=/2` - Non-unification: `X \\= Y`
-- `</2`, `>/2` - Arithmetic comparison
+#### Comparison Operators
+- `=/2` - Unification operator: `X = hello`
+- `\\=/2` - Negation of unification: `X \\= Y`  
+- `</2`, `>/2` - Arithmetic comparison: `5 < 10`
+- `=</2`, `>=/2` - Arithmetic comparison: `X >= 0`
+- `==/2`, `\\==/2` - Strict term equality/inequality: `X == Y` (structural comparison)
+- Standard Prolog term ordering: Variables < Numbers < Atoms < Strings < Compounds < Lists
 
-#### Lists
-- `append/3` - List concatenation: `append([1,2], [3,4], L)`
-- `member/2` - List membership: `member(X, [1,2,3])`
-- `length/2` - List length: `length([1,2,3], N)`
+#### List Operations
+- `append/3` - List concatenation with backtracking: `append([1,2], [3,4], L)`
+- `member/2` - List membership testing with backtracking: `member(X, [1,2,3])`
+- `length/2` - Bidirectional list length: `length([1,2,3], N)` or `length(L, 3)`
 
-#### Type Testing
-- `var/1` - Variable test: `var(X)`  
-- `nonvar/1` - Non-variable test: `nonvar(hello)`
-- `atom/1` - Atom test: `atom(hello)`
-- `number/1` - Number test: `number(42)`
+#### Type Checking Predicates
+- `var/1` - Test if term is an unbound variable: `var(X)`  
+- `nonvar/1` - Test if term is bound (not a variable): `nonvar(hello)`
+- `atom/1` - Test if term is an atom: `atom(hello)`
+- `number/1` - Test if term is a number (integer or float): `number(42)`
+- `integer/1` - Test if term is specifically an integer: `integer(42)`
+- `float/1` - Test if term is specifically a float: `float(3.14)`
+- `compound/1` - Test if term is a compound structure: `compound(f(a,b))`
+- `ground/1` - Test if term is fully instantiated (no variables): `ground(hello(world))`
 
-#### Control
-- `true/0` - Always succeeds
-- `fail/0` - Always fails
+#### Control Structures
+- `true/0` - Always succeeds: `true`
+- `fail/0` - Always fails (forces backtracking): `fail`
+- `\\+/1` - Negation as failure (succeeds if goal fails): `\\+ member(x, [a,b,c])`
+- `!/0` - Cut operator for preventing backtracking: `p(X) :- q(X), !, r(X)`
+
+#### Input/Output
+- `write/1` - Output a term to stdout: `write('Hello World')`
+- `nl/0` - Output a newline character: `nl`
+
+#### Advanced Features
+- **First Argument Indexing**: Database optimization for faster clause lookup
+- **Comprehensive arithmetic evaluation**: Supports complex expressions with proper precedence
+- **Modern C++ implementation**: Uses STL algorithms like `std::lexicographical_compare`
+- **Efficient comparison system**: Map-based comparator with lambda functions  
+- **Ground term checking**: Recursive validation of fully instantiated terms
+- **Efficient term comparison**: Standard Prolog term ordering implemented with modern C++
 
 ### Custom Built-ins
 
