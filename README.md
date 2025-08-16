@@ -1,4 +1,4 @@
-# CppLProlog
+# CppProlog
 
 A modern, high-performance Prolog interpreter implemented in C++23 with comprehensive testing, examples, and documentation.
 

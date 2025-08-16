@@ -2,14 +2,21 @@
 #include <algorithm>
 #include <sstream>
 #include <cstdlib>
+#include <unordered_set>
 
 namespace prolog {
 
 std::vector<Solution> Resolver::solve(const TermPtr& query) {
+    // Collect variables from the query
+    std::vector<std::string> queryVariables;
+    collectVariablesFromTerm(query, queryVariables);
+    
     std::vector<Solution> solutions;
     
-    solveWithCallback({query}, [&solutions](const Solution& solution) {
-        solutions.push_back(solution);
+    solveWithCallback({query}, [&solutions, this, &queryVariables](const Solution& solution) {
+        // Filter bindings to only include query variables
+        Solution filteredSolution{filterBindings(solution.bindings, queryVariables)};
+        solutions.push_back(filteredSolution);
         return true; // Continue to find more solutions
     });
     
@@ -17,10 +24,18 @@ std::vector<Solution> Resolver::solve(const TermPtr& query) {
 }
 
 std::vector<Solution> Resolver::solve(const TermList& goals) {
+    // Collect variables from all goals
+    std::vector<std::string> queryVariables;
+    for (const auto& goal : goals) {
+        collectVariablesFromTerm(goal, queryVariables);
+    }
+    
     std::vector<Solution> solutions;
     
-    solveWithCallback(goals, [&solutions](const Solution& solution) {
-        solutions.push_back(solution);
+    solveWithCallback(goals, [&solutions, this, &queryVariables](const Solution& solution) {
+        // Filter bindings to only include query variables
+        Solution filteredSolution{filterBindings(solution.bindings, queryVariables)};
+        solutions.push_back(filteredSolution);
         return true; // Continue to find more solutions
     });
     
@@ -95,9 +110,15 @@ bool Resolver::solveGoals(const TermList& goals, const Substitution& bindings,
             }
             
             // Recursively solve new goals
-            if (solveGoals(new_goals, new_bindings, callback)) {
+            bool continue_search = solveGoals(new_goals, new_bindings, callback);
+            if (continue_search) {
                 found_any = true;
-                // Don't return early - continue to find more solutions
+                // Continue to find more solutions
+            } else {
+                // Callback returned false, stop searching
+                found_any = true; // We found at least one solution
+                current_depth_--;
+                return false; // Stop the search
             }
         }
         
@@ -120,6 +141,55 @@ bool Resolver::backtrack() {
 
 std::string Resolver::renameVariables(size_t clause_id) const {
     return "_" + std::to_string(clause_id) + "_" + std::to_string(current_depth_);
+}
+
+void Resolver::collectVariablesFromTerm(const TermPtr& term, std::vector<std::string>& variables) const {
+    std::unordered_set<std::string> seen;
+    
+    std::function<void(const TermPtr&)> collectFromTerm = [&](const TermPtr& t) {
+        switch (t->type()) {
+            case TermType::VARIABLE: {
+                auto var = t->as<Variable>();
+                if (seen.insert(var->name()).second) {
+                    variables.push_back(var->name());
+                }
+                break;
+            }
+            case TermType::COMPOUND: {
+                auto compound = t->as<Compound>();
+                for (const auto& arg : compound->arguments()) {
+                    collectFromTerm(arg);
+                }
+                break;
+            }
+            case TermType::LIST: {
+                auto list = t->as<List>();
+                for (const auto& elem : list->elements()) {
+                    collectFromTerm(elem);
+                }
+                if (list->tail()) {
+                    collectFromTerm(list->tail());
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    };
+    
+    collectFromTerm(term);
+}
+
+Substitution Resolver::filterBindings(const Substitution& bindings, 
+                                     const std::vector<std::string>& queryVariables) const {
+    Substitution filtered;
+    for (const auto& varName : queryVariables) {
+        auto it = bindings.find(varName);
+        if (it != bindings.end()) {
+            filtered[varName] = it->second;
+        }
+    }
+    return filtered;
 }
 
 }

@@ -81,6 +81,13 @@ private:
     bool backtrack();
     
     std::string renameVariables(size_t clause_id) const;
+    
+    // Helper function to collect variables from a term
+    void collectVariablesFromTerm(const TermPtr& term, std::vector<std::string>& variables) const;
+    
+    // Helper function to filter bindings to only include query variables
+    Substitution filterBindings(const Substitution& bindings, 
+                               const std::vector<std::string>& queryVariables) const;
 };
 
 }

@@ -153,7 +153,9 @@ bool BuiltinPredicates::member(const TermList& args, Substitution& bindings,
     if (list->is<List>()) {
         auto l = list->as<List>();
         for (const auto& elem : l->elements()) {
-            auto unification = Unification::unify(element, elem, bindings);
+            // Create a copy of bindings to work with
+            Substitution local_bindings = bindings;
+            auto unification = Unification::unify(element, elem, local_bindings);
             if (unification) {
                 Solution solution{*unification};
                 if (!callback(solution)) {
