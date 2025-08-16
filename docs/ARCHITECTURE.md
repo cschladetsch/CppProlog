@@ -31,57 +31,74 @@ CppLProlog is designed as a modular, high-performance Prolog interpreter using m
 ## System Architecture
 
 ```mermaid
-graph TD
-    A[Interpreter] --> B[Database]
-    A --> C[Parser]
-    A --> D[Resolver]
-    B --> D
-    C --> E[Term System]
-    D --> F[Unification Engine]
-    E --> F
-    D --> G[Built-in Predicates]
+graph TB
+    subgraph "User Interface Layer"
+        UI["🎯 Interactive REPL<br/>• Command Processing<br/>• File Loading<br/>• Query Execution"]
+    end
     
-    A["`**Interpreter**
-    - REPL Interface
-    - Query Execution
-    - File Loading
-    - Error Handling`"]
+    subgraph "Interpretation Layer"
+        INT["🧠 Interpreter<br/>• Query Coordination<br/>• Solution Management<br/>• Error Handling<br/>• Statistics"]
+    end
     
-    B["`**Database**
-    - Clause Storage
-    - Functor/Arity Indexing
-    - Fast Retrieval
-    - Memory Management`"]
+    subgraph "Core Logic Layer"
+        RES["🔄 Resolver<br/>• SLD Resolution<br/>• Backtracking Engine<br/>• Choice Point Stack<br/>• Goal Management"]
+        
+        UNI["🔗 Unification Engine<br/>• Robinson's Algorithm<br/>• Occurs Check<br/>• Substitution Composition<br/>• Variable Dereferencing"]
+        
+        BIP["⚡ Built-in Predicates<br/>• List Operations<br/>• Type Checking<br/>• Comparison Operators<br/>• Control Flow"]
+    end
     
-    C["`**Parser**
-    - Lexical Analysis
-    - Syntax Analysis
-    - AST Building
-    - Error Recovery`"]
+    subgraph "Data Management Layer"
+        DB["🗄️ Database<br/>• Clause Storage<br/>• Functor/Arity Indexing<br/>• Efficient Retrieval<br/>• Memory Optimization"]
+        
+        TERMS["🏗️ Term System<br/>• Polymorphic Hierarchy<br/>• Smart Pointer Management<br/>• Immutable Design<br/>• Hash-based Operations"]
+    end
     
-    D["`**Resolver**
-    - SLD Resolution
-    - Backtracking
-    - Choice Points
-    - Goal Management`"]
+    subgraph "Parsing Layer"
+        LEX["📝 Lexer<br/>• Tokenization<br/>• Comment Handling<br/>• Position Tracking<br/>• Error Recovery"]
+        
+        PAR["🌳 Parser<br/>• Recursive Descent<br/>• AST Construction<br/>• Operator Precedence<br/>• Syntax Validation"]
+    end
     
-    E["`**Term System**
-    - Term Hierarchy
-    - Type Safety
-    - Immutable Design
-    - Hash Support`"]
+    subgraph "Infrastructure Layer"
+        MEM["💾 Memory Management<br/>• Reference Counting<br/>• RAII Principles<br/>• Memory Pools<br/>• Automatic Cleanup"]
+        
+        ERR["⚠️ Error Handling<br/>• Exception Hierarchy<br/>• Context Preservation<br/>• Graceful Recovery<br/>• User-friendly Messages"]
+    end
     
-    F["`**Unification**
-    - Robinson's Algorithm
-    - Occurs Check
-    - Substitution Composition
-    - Variable Binding`"]
+    UI --> INT
+    INT --> RES
+    INT --> DB
+    INT --> PAR
     
-    G["`**Built-ins**
-    - Arithmetic
-    - Comparison
-    - Type Checking
-    - I/O Operations`"]
+    RES --> UNI
+    RES --> BIP
+    RES --> DB
+    
+    PAR --> LEX
+    PAR --> TERMS
+    
+    UNI --> TERMS
+    BIP --> TERMS
+    DB --> TERMS
+    
+    TERMS --> MEM
+    INT --> ERR
+    PAR --> ERR
+    
+    classDef userLayer fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef interpretLayer fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef coreLayer fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef dataLayer fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef parseLayer fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef infraLayer fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    
+    class UI userLayer
+    class INT interpretLayer
+    class RES,UNI,BIP coreLayer
+    class DB,TERMS dataLayer
+    class LEX,PAR parseLayer
+    class MEM,ERR infraLayer
 ```
 
 ## Component Details
@@ -96,54 +113,103 @@ The term system forms the foundation of the interpreter, representing all Prolog
 classDiagram
     class Term {
         <<abstract>>
-        +getType() TermType
-        +toString() string
-        +hash() size_t
-        +equals(Term) bool
-        +clone() TermPtr
-        +isGround() bool
-        +getVariables() set~string~
+        +type() TermType
+        +toString() string*
+        +hash() size_t*
+        +equals(Term&) bool*
+        +clone() TermPtr*
+        +as~T~() T*
+        +is~T~() bool
     }
     
     class Atom {
-        -name: string
-        +getName() string
+        -name_ string
+        +name() string&
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
     }
     
     class Variable {
-        -name: string
-        +getName() string
+        -name_ string
+        +name() string&
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
     }
     
     class Integer {
-        -value: long long
-        +getValue() long long
+        -value_ int64_t
+        +value() int64_t
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
     }
     
     class Float {
-        -value: double
-        +getValue() double
+        -value_ double
+        +value() double
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
     }
     
     class String {
-        -value: string
-        +getValue() string
+        -value_ string
+        +value() string&
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
     }
     
     class Compound {
-        -functor: string
-        -arguments: vector~TermPtr~
-        +getFunctor() string
-        +getArguments() vector~TermPtr~
-        +getArity() size_t
+        -functor_ string
+        -arguments_ TermList
+        +functor() string&
+        +arguments() TermList&
+        +arity() size_t
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
     }
     
     class List {
-        -elements: vector~TermPtr~
-        -tail: TermPtr
-        +getElements() vector~TermPtr~
-        +getTail() TermPtr
-        +isEmpty() bool
+        -elements_ TermList
+        -tail_ TermPtr
+        +elements() TermList&
+        +tail() TermPtr&
+        +hasProperTail() bool
+        +toString() string
+        +clone() TermPtr
+        +equals(Term&) bool
+        +hash() size_t
+    }
+    
+    class TermPtr {
+        <<typedef>>
+        shared_ptr~Term~
+    }
+    
+    class TermList {
+        <<typedef>>
+        vector~TermPtr~
+    }
+    
+    class TermType {
+        <<enumeration>>
+        ATOM
+        VARIABLE
+        COMPOUND
+        INTEGER
+        FLOAT
+        STRING
+        LIST
     }
     
     Term <|-- Atom
@@ -153,6 +219,16 @@ classDiagram
     Term <|-- String
     Term <|-- Compound
     Term <|-- List
+    
+    Term --> TermType : uses
+    TermPtr --> Term : points to
+    TermList --> TermPtr : contains
+    Compound --> TermList : has
+    List --> TermList : has
+    List --> TermPtr : tail
+    
+    note for Term "All methods marked with * are pure virtual"
+    note for TermPtr "Smart pointer for automatic memory management"
 ```
 
 #### Key Design Decisions
@@ -181,35 +257,57 @@ Implements Robinson's unification algorithm with occurs check.
 
 ```mermaid
 flowchart TD
-    A[Unify Terms T1, T2] --> B[Dereference T1, T2]
-    B --> C{T1 == T2?}
-    C -->|Yes| D[Success: Empty Substitution]
-    C -->|No| E{T1 is Variable?}
-    E -->|Yes| F{T2 is Variable?}
-    F -->|Yes| G[Success: T1 = T2]
-    F -->|No| H[Occurs Check: T1 in T2?]
-    H -->|Yes| I[Failure: Infinite Structure]
-    H -->|No| J[Success: T1 = T2]
-    E -->|No| K{T2 is Variable?}
-    K -->|Yes| L[Occurs Check: T2 in T1?]
-    L -->|Yes| I
-    L -->|No| M[Success: T2 = T1]
-    K -->|No| N{Both Compound?}
-    N -->|No| O[Failure: Type Mismatch]
-    N -->|Yes| P[Same Functor/Arity?]
-    P -->|No| O
-    P -->|Yes| Q[Unify Arguments Recursively]
-    Q --> R{All Arguments Unified?}
-    R -->|No| O
-    R -->|Yes| S[Success: Compose Substitutions]
+    Start(["unify(T1, T2)"]) --> Deref["🔍 Dereference T1, T2<br/>Follow variable bindings"]
+    Deref --> EqualCheck{"T1 equals T2?<br/>(structural equality)"}
     
-    style D fill:#c8e6c9
-    style G fill:#c8e6c9
-    style J fill:#c8e6c9
-    style M fill:#c8e6c9
-    style S fill:#c8e6c9
-    style I fill:#ffcdd2
-    style O fill:#ffcdd2
+    EqualCheck -->|"✅ Yes"| SuccessEmpty["✅ Success<br/>Return current substitution"]
+    EqualCheck -->|"❌ No"| VarCheck1{"T1 is Variable?"}
+    
+    VarCheck1 -->|"✅ Yes"| VarCheck2{"T2 is Variable?"}
+    VarCheck2 -->|"✅ Yes"| VarVarBind["🔗 Bind T1 → T2<br/>Update substitution"]
+    VarVarBind --> SuccessVarVar["✅ Success<br/>Variable-Variable binding"]
+    
+    VarCheck2 -->|"❌ No"| OccursCheck1["🔍 Occurs Check<br/>Does T1 occur in T2?"]
+    OccursCheck1 -->|"⚠️ Yes"| FailOccurs1["❌ Failure<br/>Infinite structure detected"]
+    OccursCheck1 -->|"✅ No"| VarTermBind["🔗 Bind T1 → T2<br/>Update substitution"]
+    VarTermBind --> SuccessVarTerm["✅ Success<br/>Variable-Term binding"]
+    
+    VarCheck1 -->|"❌ No"| VarCheck3{"T2 is Variable?"}
+    VarCheck3 -->|"✅ Yes"| OccursCheck2["🔍 Occurs Check<br/>Does T2 occur in T1?"]
+    OccursCheck2 -->|"⚠️ Yes"| FailOccurs2["❌ Failure<br/>Infinite structure detected"]
+    OccursCheck2 -->|"✅ No"| TermVarBind["🔗 Bind T2 → T1<br/>Update substitution"]
+    TermVarBind --> SuccessTermVar["✅ Success<br/>Term-Variable binding"]
+    
+    VarCheck3 -->|"❌ No"| TypeCheck{"Same TermType?<br/>(ATOM, COMPOUND, etc.)"}
+    TypeCheck -->|"❌ No"| FailType["❌ Failure<br/>Type mismatch"]
+    
+    TypeCheck -->|"✅ Yes"| StructCheck{"Term structure?"}
+    StructCheck -->|"Atomic"| AtomCheck{"Same atom name?"}
+    AtomCheck -->|"✅ Yes"| SuccessAtomic["✅ Success<br/>Identical atoms"]
+    AtomCheck -->|"❌ No"| FailAtomic["❌ Failure<br/>Different atoms"]
+    
+    StructCheck -->|"Compound"| CompoundCheck{"Same functor/arity?"}
+    CompoundCheck -->|"❌ No"| FailCompound["❌ Failure<br/>Different functors"]
+    CompoundCheck -->|"✅ Yes"| RecursiveUnify["🔄 Recursive Unification<br/>Unify all arguments"]
+    
+    RecursiveUnify --> RecursiveCheck{"All arguments<br/>unified successfully?"}
+    RecursiveCheck -->|"❌ No"| FailRecursive["❌ Failure<br/>Argument unification failed"]
+    RecursiveCheck -->|"✅ Yes"| SuccessRecursive["✅ Success<br/>Compound unification complete"]
+    
+    StructCheck -->|"List"| ListUnify["📝 List Unification<br/>Handle elements and tail"]
+    ListUnify --> ListCheck{"List structures<br/>compatible?"}
+    ListCheck -->|"✅ Yes"| SuccessList["✅ Success<br/>List unification complete"]
+    ListCheck -->|"❌ No"| FailList["❌ Failure<br/>Incompatible lists"]
+    
+    classDef success fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    classDef failure fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    classDef process fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    
+    class SuccessEmpty,SuccessVarVar,SuccessVarTerm,SuccessTermVar,SuccessAtomic,SuccessRecursive,SuccessList success
+    class FailOccurs1,FailOccurs2,FailType,FailAtomic,FailCompound,FailRecursive,FailList failure
+    class Deref,OccursCheck1,OccursCheck2,VarVarBind,VarTermBind,TermVarBind,RecursiveUnify,ListUnify process
+    class EqualCheck,VarCheck1,VarCheck2,VarCheck3,TypeCheck,StructCheck,AtomCheck,CompoundCheck,RecursiveCheck,ListCheck decision
 ```
 
 #### Substitution Management
@@ -303,37 +401,76 @@ class Choice {
 
 ```mermaid
 flowchart TD
-    A[Start: Goals + Bindings] --> B{Goals Empty?}
-    B -->|Yes| C[Success: Return Solution]
-    B -->|No| D[Take First Goal]
-    D --> E[Find Matching Clauses]
-    E --> F{Clauses Available?}
-    F -->|No| G[Failure: Backtrack]
-    F -->|Yes| H[Select Next Clause]
-    H --> I[Rename Variables]
-    I --> J[Unify Goal with Head]
-    J --> K{Unification Success?}
-    K -->|No| L{More Clauses?}
-    L -->|Yes| H
-    L -->|No| G
-    K -->|Yes| M[Apply Substitution]
-    M --> N[Add Body Goals]
-    N --> O[Push Choice Point]
-    O --> P[Recursive Call]
-    P --> Q{Solution Found?}
-    Q -->|Yes| R[Report Solution]
-    Q -->|No| S{Backtrack?}
-    S -->|Yes| T[Pop Choice Point]
-    T --> L
-    S -->|No| G
-    R --> U{Continue Search?}
-    U -->|Yes| S
-    U -->|No| V[Complete]
+    Start(["🎯 solve(Goals, Substitution)"]) --> EmptyCheck{"📋 Goals list empty?"}
     
-    style A fill:#e3f2fd
-    style C fill:#c8e6c9
-    style G fill:#ffcdd2
-    style V fill:#f3e5f5
+    EmptyCheck -->|"✅ Yes"| Success["🎉 SUCCESS<br/>Return current solution<br/>with variable bindings"]
+    
+    EmptyCheck -->|"❌ No"| SelectGoal["🎯 Select First Goal<br/>Apply current substitution"]
+    
+    SelectGoal --> FindClauses["🔍 Database Lookup<br/>Find clauses matching goal<br/>functor/arity"]
+    
+    FindClauses --> ClausesCheck{"📚 Matching clauses<br/>available?"}
+    
+    ClausesCheck -->|"❌ No"| Backtrack["⬅️ BACKTRACK<br/>Pop choice point<br/>Try alternative"]
+    
+    ClausesCheck -->|"✅ Yes"| CreateChoice["💾 Create Choice Point<br/>Save: goal, remaining goals,<br/>clauses, bindings"]
+    
+    CreateChoice --> SelectClause["📄 Select Next Clause<br/>Try clauses in order"]
+    
+    SelectClause --> RenameVars["🏷️ Rename Variables<br/>Avoid variable name conflicts<br/>with unique suffix"]
+    
+    RenameVars --> AttemptUnify["🔗 Attempt Unification<br/>goal ← clause_head"]
+    
+    AttemptUnify --> UnifyCheck{"🔗 Unification<br/>successful?"}
+    
+    UnifyCheck -->|"❌ No"| MoreClauses{"📚 More clauses<br/>to try?"}
+    MoreClauses -->|"✅ Yes"| SelectClause
+    MoreClauses -->|"❌ No"| Backtrack
+    
+    UnifyCheck -->|"✅ Yes"| ApplySubst["⚡ Apply Substitution<br/>Update variable bindings<br/>throughout goal set"]
+    
+    ApplySubst --> AddBodyGoals["📝 Add Body Goals<br/>Replace current goal with<br/>clause body goals"]
+    
+    AddBodyGoals --> PushChoice["📚 Push Choice Point<br/>Save state for potential<br/>backtracking"]
+    
+    PushChoice --> RecursiveCall["🔄 Recursive Resolution<br/>solve(new_goals, new_subst)"]
+    
+    RecursiveCall --> SolutionCheck{"🎯 Solution found?"}
+    
+    SolutionCheck -->|"✅ Yes"| ReportSolution["📊 Report Solution<br/>Filter query variables<br/>Format for output"]
+    
+    SolutionCheck -->|"❌ No"| BacktrackDecision{"⚙️ Should backtrack<br/>for more solutions?"}
+    
+    BacktrackDecision -->|"✅ Yes"| PopChoice["📤 Pop Choice Point<br/>Restore previous state<br/>Continue with next clause"]
+    PopChoice --> MoreClauses
+    
+    BacktrackDecision -->|"❌ No"| Backtrack
+    
+    ReportSolution --> ContinueSearch{"🔍 Continue search<br/>for more solutions?"}
+    ContinueSearch -->|"✅ Yes"| BacktrackDecision
+    ContinueSearch -->|"❌ No"| Complete["🏁 COMPLETE<br/>Resolution finished"]
+    
+    Backtrack --> BacktrackCheck{"📚 Choice points<br/>available?"}
+    BacktrackCheck -->|"✅ Yes"| PopChoice
+    BacktrackCheck -->|"❌ No"| Failure["❌ FAILURE<br/>No more alternatives<br/>Query has no solutions"]
+    
+    subgraph "Choice Point Stack"
+        CP["Choice Point {<br/>  goal: current_goal<br/>  remaining: [goal2, goal3, ...]<br/>  clauses: [clause1, clause2, ...]<br/>  index: current_clause_position<br/>  bindings: {X→a, Y→b, ...}<br/>}"]
+    end
+    
+    classDef success fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
+    classDef failure fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    classDef process fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef backtrack fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef complete fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    
+    class Success,ReportSolution success
+    class Failure failure
+    class SelectGoal,FindClauses,CreateChoice,SelectClause,RenameVars,AttemptUnify,ApplySubst,AddBodyGoals,PushChoice,RecursiveCall process
+    class EmptyCheck,ClausesCheck,UnifyCheck,MoreClauses,SolutionCheck,BacktrackDecision,ContinueSearch,BacktrackCheck decision
+    class Backtrack,PopChoice backtrack
+    class Complete complete
 ```
 
 ### Built-in Predicates (`src/prolog/builtin_predicates.h/cpp`)
@@ -365,27 +502,100 @@ High-level interface combining all components.
 #### Query Processing Pipeline
 
 ```mermaid
-flowchart LR
-    A[User Input] --> B[Lexer]
-    B --> C[Parser]
-    C --> D[Query Term]
-    D --> E[Database Lookup]
-    E --> F[Resolver]
-    F --> G{More Solutions?}
-    G -->|Yes| H[Backtrack]
-    H --> E
-    G -->|No| I[Format Output]
-    I --> J[Display Results]
+flowchart TD
+    subgraph "Input Processing Layer"
+        UI(["👥 User Input<br/>Query string or file"])
+        CMD_CHECK{"⚙️ Command Check<br/>:quit, :help, :load?"}
+        CMD_HANDLER["📦 Command Handler<br/>Process special commands"]
+    end
     
-    F --> K[Unification]
-    K --> L[Apply Substitution]
-    L --> M[Recursive Goals]
-    M --> F
+    subgraph "Lexical Analysis Layer"
+        LEX["📝 Lexer<br/>• Tokenization<br/>• Comment removal<br/>• Position tracking"]
+        TOKENS["🏷️ Token Stream<br/>ATOM, VARIABLE, OPERATOR.."]
+    end
     
-    style A fill:#e1f5fe
-    style J fill:#e8f5e8
-    style G fill:#fff3e0
-    style H fill:#fce4ec
+    subgraph "Syntactic Analysis Layer"
+        PARSE["🌳 Parser<br/>• Recursive descent<br/>• Operator precedence<br/>• Error recovery"]
+        AST["🏗️ Query AST<br/>TermPtr structure"]
+    end
+    
+    subgraph "Resolution Preparation"
+        VAR_EXTRACT["🔍 Extract Variables<br/>Identify query variables<br/>for solution filtering"]
+        DB_LOOKUP["🗄️ Database Lookup<br/>Find matching clauses<br/>by functor/arity"]
+    end
+    
+    subgraph "Resolution Engine"
+        RESOLVER["🔄 SLD Resolver<br/>• Goal processing<br/>• Choice point management<br/>• Backtracking control"]
+        
+        UNIFY["🔗 Unification<br/>• Robinson's algorithm<br/>• Occurs check<br/>• Substitution building"]
+        
+        BUILTIN_CHECK{"⚡ Built-in Predicate?<br/>Special handling needed?"}
+        BUILTIN_EXEC["⚡ Execute Built-in<br/>List ops, type checks, etc."]
+    end
+    
+    subgraph "Solution Management"
+        SOL_FILTER["🎯 Solution Filtering<br/>Keep only query variables<br/>Remove internal variables"]
+        SOL_FORMAT["🎨 Solution Formatting<br/>Convert to readable format<br/>Handle multiple bindings"]
+    end
+    
+    subgraph "Output Layer"
+        DISPLAY["📺 Display Results<br/>• Colored output<br/>• Pagination support<br/>• Error messages"]
+        CONTINUE{"➡️ Continue Search?<br/>User requests more solutions?"}
+    end
+    
+    subgraph "Error Handling"
+        ERR_CATCH["⚠️ Exception Handling<br/>• Parse errors<br/>• Runtime errors<br/>• User-friendly messages"]
+    end
+    
+    UI --> CMD_CHECK
+    CMD_CHECK -->|"⚙️ Command"| CMD_HANDLER
+    CMD_CHECK -->|"📝 Query"| LEX
+    
+    LEX --> TOKENS
+    TOKENS --> PARSE
+    PARSE --> AST
+    
+    AST --> VAR_EXTRACT
+    VAR_EXTRACT --> DB_LOOKUP
+    DB_LOOKUP --> RESOLVER
+    
+    RESOLVER --> BUILTIN_CHECK
+    BUILTIN_CHECK -->|"✅ Yes"| BUILTIN_EXEC
+    BUILTIN_CHECK -->|"❌ No"| UNIFY
+    
+    BUILTIN_EXEC --> SOL_FILTER
+    UNIFY --> RESOLVER
+    RESOLVER --> SOL_FILTER
+    
+    SOL_FILTER --> SOL_FORMAT
+    SOL_FORMAT --> DISPLAY
+    DISPLAY --> CONTINUE
+    
+    CONTINUE -->|"✅ More"| RESOLVER
+    CONTINUE -->|"❌ Done"| UI
+    
+    LEX -.-> ERR_CATCH
+    PARSE -.-> ERR_CATCH
+    RESOLVER -.-> ERR_CATCH
+    ERR_CATCH --> DISPLAY
+    
+    CMD_HANDLER --> UI
+    
+    classDef input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef lexical fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef syntax fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef resolution fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef solution fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef output fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    classDef error fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
+    
+    class UI,CMD_CHECK,CMD_HANDLER input
+    class LEX,TOKENS lexical
+    class PARSE,AST syntax
+    class VAR_EXTRACT,DB_LOOKUP,RESOLVER,UNIFY,BUILTIN_CHECK,BUILTIN_EXEC resolution
+    class SOL_FILTER,SOL_FORMAT solution
+    class DISPLAY,CONTINUE output
+    class ERR_CATCH error
 ```
 
 #### Interactive Mode
@@ -399,31 +609,67 @@ flowchart LR
 ### Memory Architecture
 
 ```mermaid
-graph TD
-    A[Term Factory] --> B[shared_ptr Pool]
-    B --> C[Term Objects]
-    C --> D[Reference Counting]
-    D --> E{Ref Count = 0?}
-    E -->|Yes| F[Automatic Cleanup]
-    E -->|No| G[Keep Alive]
+graph TB
+    subgraph "Term Management Layer"
+        TF["🏠 Term Factory Functions<br/>• makeAtom(), makeVariable()<br/>• makeCompound(), makeList()<br/>• Consistent object creation<br/>• Type-safe construction"]
+        
+        SP["🧠 Smart Pointer Pool<br/>• shared_ptr<Term> instances<br/>• Automatic reference counting<br/>• Thread-safe ref management<br/>• Cycle detection ready"]
+    end
     
-    H[Clause Factory] --> I[unique_ptr Storage]
-    I --> J[Clause Objects]
-    J --> K[RAII Management]
-    K --> L[Scope-based Cleanup]
+    subgraph "Memory Allocation Strategy"
+        HEAP["💾 Heap Allocation<br/>• Dynamic term creation<br/>• Varying object sizes<br/>• Automatic expansion<br/>• OS memory management"]
+        
+        POOL["🏊 Memory Pools (Optional)<br/>• Fixed-size allocators<br/>• Reduced fragmentation<br/>• Fast allocation/deallocation<br/>• Cache-friendly access"]
+    end
     
-    M[Database] --> N[Vector Storage]
-    N --> O[Contiguous Memory]
-    O --> P[Cache Locality]
+    subgraph "Data Structure Storage"
+        DB_VEC["🗄️ Database Vector<br/>• vector<unique_ptr<Clause>><br/>• Contiguous clause storage<br/>• Cache-locality optimized<br/>• Sequential access pattern"]
+        
+        INDEX_MAP["🗺️ Index HashMap<br/>• unordered_map<string, vector<size_t>><br/>• Functor/arity → clause indices<br/>• O(1) lookup performance<br/>• Hash-based indexing"]
+    end
     
-    Q[Substitution Maps] --> R[unordered_map]
-    R --> S[Variable Bindings]
-    S --> T[Copy Semantics]
+    subgraph "Runtime Memory Management"
+        SUBST_MAP["🔗 Substitution Maps<br/>• unordered_map<string, TermPtr><br/>• Variable name → term binding<br/>• Copy semantics for safety<br/>• Scoped lifetime management"]
+        
+        CHOICE_STACK["📚 Choice Point Stack<br/>• vector<Choice> container<br/>• LIFO backtracking order<br/>• Stack-based allocation<br/>• Automatic scope cleanup"]
+    end
     
-    style F fill:#c8e6c9
-    style L fill:#c8e6c9
-    style P fill:#e8f5e8
-    style T fill:#fff3e0
+    subgraph "Cleanup & Lifecycle"
+        RAII["🔄 RAII Principles<br/>• Constructor acquisition<br/>• Destructor release<br/>• Exception safety<br/>• Deterministic cleanup"]
+        
+        REF_COUNT["📊 Reference Counting<br/>• shared_ptr automatic<br/>• Cycle-free design<br/>• Immediate deallocation<br/>• No garbage collection"]
+        
+        SCOPE_MGMT["🎯 Scope Management<br/>• Stack unwinding<br/>• Local object cleanup<br/>• Exception propagation<br/>• Resource guarantees"]
+    end
+    
+    TF --> SP
+    SP --> HEAP
+    TF --> POOL
+    
+    SP --> DB_VEC
+    SP --> SUBST_MAP
+    
+    DB_VEC --> INDEX_MAP
+    SUBST_MAP --> CHOICE_STACK
+    
+    SP --> REF_COUNT
+    DB_VEC --> RAII
+    CHOICE_STACK --> SCOPE_MGMT
+    
+    REF_COUNT --> SCOPE_MGMT
+    RAII --> SCOPE_MGMT
+    
+    classDef factory fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef allocation fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef storage fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef runtime fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef cleanup fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+    
+    class TF,SP factory
+    class HEAP,POOL allocation
+    class DB_VEC,INDEX_MAP storage
+    class SUBST_MAP,CHOICE_STACK runtime
+    class RAII,REF_COUNT,SCOPE_MGMT cleanup
 ```
 
 ### Strategy
