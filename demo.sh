@@ -60,18 +60,18 @@ fi
 clear
 echo -e "${BOLD}${GREEN}"
 cat << "EOF"
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                         CppLProlog System Demo                              ║
-║                                                                              ║
-║  A Modern C++23 Prolog Interpreter Demonstrating:                           ║
-║  • High-Performance Resolution Engine                                        ║
-║  • Comprehensive Built-in Predicates                                         ║
-║  • Advanced Unification with Occurs Check                                    ║
-║  • Memory Pool Optimization                                                  ║
-║  • Complete Test Suite Coverage                                              ║
-║  • Interactive REPL Mode                                                     ║
-║  • Rich Example Programs                                                     ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+================================================================================
+                         CppLProlog System Demo                              
+
+  A Modern C++23 Prolog Interpreter Demonstrating:                           
+  • High-Performance Resolution Engine                                        
+  • Comprehensive Built-in Predicates                                         
+  • Advanced Unification with Occurs Check                                    
+  • Memory Pool Optimization                                                  
+  • Complete Test Suite Coverage                                              
+  • Interactive REPL Mode                                                     
+  • Rich Example Programs                                                     
+================================================================================
 EOF
 echo -e "${NC}"
 
@@ -149,7 +149,7 @@ echo
 
 # Load the family tree and start interactive mode
 echo -e "${MAGENTA}$ ./src/prolog_interpreter examples/family.pl${NC}"
-timeout 10 ./src/prolog_interpreter examples/family.pl || echo -e "${YELLOW}Interactive mode timed out - continuing demo...${NC}"
+timeout 10 ./src/prolog_interpreter examples/family.pl || echo -e "${YELLOW}Interactive mode timed out - continuing...${NC}"
 
 # Architecture highlights
 print_header "6. System Architecture Highlights"
@@ -251,9 +251,9 @@ ${BOLD}Real-World Ready:${NC}
 EOF
 
 echo -e "${BOLD}${YELLOW}This demonstration showcased the key capabilities of CppLProlog.${NC}"
-echo -e "${BOLD}${YELLOW}The system is ready for serious Prolog development and research!${NC}\n"
+echo -e "${BOLD}${YELLOW}The system is ready for serious Prolog development!${NC}\n"
 
 # Return to original directory
 cd ..
 
-print_success "Demo completed! CppLProlog is ready for your logic programming needs."
+print_success "Demo completed! CppLProlog is ready for logic programming."
