@@ -46,6 +46,7 @@ private:
     std::string readVariable();
     std::string readNumber();
     std::string readString();
+    std::string readSingleQuotedString();
     
     bool isAtomStart(char c) const;
     bool isAtomChar(char c) const;

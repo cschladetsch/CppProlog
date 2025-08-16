@@ -1,6 +1,7 @@
 #include "builtin_predicates.h"
 #include "unification.h"
 #include <cmath>
+#include <iostream>
 
 namespace prolog {
 
@@ -37,6 +38,9 @@ void BuiltinPredicates::registerBuiltins() {
     builtins_[makeKey("!", 0)] = cut;
     builtins_[makeKey("fail", 0)] = fail;
     builtins_[makeKey("true", 0)] = true_pred;
+    
+    // I/O
+    builtins_[makeKey("write", 1)] = write;
 }
 
 bool BuiltinPredicates::isBuiltin(const std::string& functor, size_t arity) {
@@ -243,5 +247,31 @@ bool BuiltinPredicates::number(const TermList& args, Substitution& bindings,
                               std::function<bool(const Solution&)> callback) { return false; }
 bool BuiltinPredicates::cut(const TermList& args, Substitution& bindings, 
                            std::function<bool(const Solution&)> callback) { return false; }
+
+bool BuiltinPredicates::write(const TermList& args, Substitution& bindings, 
+                             std::function<bool(const Solution&)> callback) {
+    if (args.size() != 1) return false;
+    
+    TermPtr term = Unification::applySubstitution(args[0], bindings);
+    
+    // Convert term to string and output it
+    if (term->type() == TermType::STRING) {
+        std::cout << term->as<String>()->value();
+    } else if (term->type() == TermType::ATOM) {
+        std::cout << term->as<Atom>()->name();
+    } else if (term->type() == TermType::INTEGER) {
+        std::cout << term->as<Integer>()->value();
+    } else if (term->type() == TermType::FLOAT) {
+        std::cout << term->as<Float>()->value();
+    } else {
+        // For compound terms, variables, lists - use toString if available
+        // For now, just output a placeholder
+        std::cout << "<term>";
+    }
+    
+    // write/1 always succeeds
+    Solution solution{bindings};
+    return callback(solution);
+}
 
 }

@@ -81,6 +81,43 @@ bool Resolver::solveGoals(const TermList& goals, const Substitution& bindings,
     TermList remaining_goals(goals.begin() + 1, goals.end());
     Unification::applySubstitutionInPlace(remaining_goals, bindings);
     
+    // Check for built-in predicates first
+    if (current_goal->is<Compound>()) {
+        auto compound = current_goal->as<Compound>();
+        if (BuiltinPredicates::isBuiltin(compound->functor(), compound->arguments().size())) {
+            // Handle built-in predicate
+            Substitution new_bindings = bindings;
+            bool builtin_success = BuiltinPredicates::callBuiltin(
+                compound->functor(), 
+                compound->arguments().size(),
+                compound->arguments(),
+                new_bindings,
+                [&](const Solution& builtin_solution) {
+                    // Continue with remaining goals
+                    return solveGoals(remaining_goals, builtin_solution.bindings, callback);
+                }
+            );
+            return builtin_success;
+        }
+    } else if (current_goal->is<Atom>()) {
+        auto atom = current_goal->as<Atom>();
+        if (BuiltinPredicates::isBuiltin(atom->name(), 0)) {
+            // Handle built-in predicate with arity 0
+            Substitution new_bindings = bindings;
+            bool builtin_success = BuiltinPredicates::callBuiltin(
+                atom->name(),
+                0,
+                {}, // No arguments for atoms
+                new_bindings,
+                [&](const Solution& builtin_solution) {
+                    // Continue with remaining goals
+                    return solveGoals(remaining_goals, builtin_solution.bindings, callback);
+                }
+            );
+            return builtin_success;
+        }
+    }
+    
     auto matching_clauses = database_.findMatchingClauses(current_goal);
     
     if (matching_clauses.empty()) {

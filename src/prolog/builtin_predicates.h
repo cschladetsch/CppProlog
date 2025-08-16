@@ -1,7 +1,7 @@
 #pragma once
 
 #include "term.h"
-#include "resolver.h"
+#include "solution.h"
 #include <functional>
 #include <unordered_map>
 #include <string>
@@ -71,6 +71,10 @@ private:
                      std::function<bool(const Solution&)> callback);
     static bool true_pred(const TermList& args, Substitution& bindings, 
                           std::function<bool(const Solution&)> callback);
+    
+    // I/O predicates
+    static bool write(const TermList& args, Substitution& bindings, 
+                      std::function<bool(const Solution&)> callback);
     
     // Utility functions
     static bool isNumber(const TermPtr& term);

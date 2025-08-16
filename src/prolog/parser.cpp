@@ -64,6 +64,9 @@ std::vector<Token> Lexer::tokenize() {
             case '"':
                 tokens.emplace_back(Token::STRING, readString(), start_pos);
                 break;
+            case '\'':
+                tokens.emplace_back(Token::STRING, readSingleQuotedString(), start_pos);
+                break;
             default:
                 if (isAtomStart(c)) {
                     std::string value = readAtom();
@@ -172,6 +175,34 @@ std::string Lexer::readString() {
     
     if (position_ < input_.length()) {
         advance();
+    }
+    
+    return result;
+}
+
+std::string Lexer::readSingleQuotedString() {
+    std::string result;
+    advance(); // Skip opening single quote
+    
+    while (position_ < input_.length() && peek() != '\'') {
+        char c = advance();
+        if (c == '\\' && position_ < input_.length()) {
+            char escaped = advance();
+            switch (escaped) {
+                case 'n': result += '\n'; break;
+                case 't': result += '\t'; break;
+                case 'r': result += '\r'; break;
+                case '\\': result += '\\'; break;
+                case '\'': result += '\''; break;
+                default: result += escaped; break;
+            }
+        } else {
+            result += c;
+        }
+    }
+    
+    if (position_ < input_.length()) {
+        advance(); // Skip closing single quote
     }
     
     return result;

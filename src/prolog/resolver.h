@@ -4,30 +4,13 @@
 #include "clause.h"
 #include "database.h"
 #include "unification.h"
+#include "solution.h"
+#include "builtin_predicates.h"
 #include <vector>
 #include <functional>
 #include <memory>
 
 namespace prolog {
-
-struct Solution {
-    Substitution bindings;
-    
-    std::string toString() const {
-        if (bindings.empty()) {
-            return "true";
-        }
-        
-        std::string result;
-        bool first = true;
-        for (const auto& [var, term] : bindings) {
-            if (!first) result += ", ";
-            result += var + " = " + term->toString();
-            first = false;
-        }
-        return result;
-    }
-};
 
 class Choice {
 public:
