@@ -13,6 +13,7 @@ add_library(prolog_core
 
 target_include_directories(prolog_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/External/rang/include
 )
 
 target_compile_features(prolog_core PUBLIC cxx_std_23)

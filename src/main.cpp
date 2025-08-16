@@ -1,4 +1,5 @@
 #include "prolog/interpreter.h"
+#include <rang.hpp>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -16,13 +17,18 @@ int main(int argc, char* argv[]) {
             std::string arg = argv[i];
             
             if (arg == "-h" || arg == "--help") {
-                std::cout << "CppLProlog - A modern Prolog interpreter\n\n";
-                std::cout << "Usage: " << argv[0] << " [options] [files...]\n\n";
-                std::cout << "Options:\n";
-                std::cout << "  -h, --help     Show this help message\n";
-                std::cout << "  -q, --query Q  Execute query Q and exit\n";
-                std::cout << "  -n, --no-interactive  Don't start interactive mode\n";
-                std::cout << "\nFiles:\n";
+                std::cout << rang::style::bold << rang::fg::cyan 
+                          << "CppLProlog - A modern Prolog interpreter" << rang::style::reset << "\n\n";
+                std::cout << rang::style::bold << "Usage: " << rang::style::reset 
+                          << argv[0] << " [options] [files...]\n\n";
+                std::cout << rang::style::bold << "Options:" << rang::style::reset << "\n";
+                std::cout << "  " << rang::fg::green << "-h, --help" << rang::style::reset 
+                          << "     Show this help message\n";
+                std::cout << "  " << rang::fg::green << "-q, --query Q" << rang::style::reset 
+                          << "  Execute query Q and exit\n";
+                std::cout << "  " << rang::fg::green << "-n, --no-interactive" << rang::style::reset 
+                          << "  Don't start interactive mode\n";
+                std::cout << "\n" << rang::style::bold << "Files:" << rang::style::reset << "\n";
                 std::cout << "  Any .pl files will be loaded before starting\n";
                 return 0;
             } else if (arg == "-q" || arg == "--query") {
@@ -46,12 +52,13 @@ int main(int argc, char* argv[]) {
         
         // Load files
         for (const auto& file : files) {
-            std::cout << "Loading " << file << "...\n";
+            std::cout << rang::fg::yellow << "Loading " << file << "..." << rang::style::reset << "\n";
             try {
                 interpreter.loadFile(file);
-                std::cout << "Loaded successfully.\n";
+                std::cout << rang::fg::green << "Loaded successfully." << rang::style::reset << "\n";
             } catch (const std::exception& e) {
-                std::cerr << "Error loading " << file << ": " << e.what() << "\n";
+                std::cerr << rang::fg::red << "Error loading " << file << ": " << e.what() 
+                          << rang::style::reset << "\n";
                 return 1;
             }
         }

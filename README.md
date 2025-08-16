@@ -19,18 +19,20 @@ A modern, high-performance Prolog interpreter implemented in C++23 with comprehe
 
 - C++23 compatible compiler (GCC 12+, Clang 15+, MSVC 19.30+)
 - CMake 3.25 or higher
-- Git
+- Git (with submodule support for rang.hpp)
 
 ### Building
 
 ```bash
-git clone https://github.com/cschladetsch/CppProlog
+git clone --recursive https://github.com/cschladetsch/CppProlog
 cd CppLProlog
 mkdir build
 cd build
 cmake ..
 make -j$(nproc)
 ```
+
+**Note**: The `--recursive` flag is required to clone the rang.hpp submodule for colored terminal output.
 
 ### Running
 
@@ -276,9 +278,24 @@ if (result) {
 - Document public APIs
 - Follow existing naming conventions
 
+## Dependencies
+
+### External Libraries
+
+- **[rang.hpp](https://github.com/agauniyal/rang)**: Header-only library for colored terminal output
+  - Provides cross-platform terminal color support
+  - Included as a git submodule in `External/rang/`
+  - No additional installation required
+
+### Build Dependencies
+
+- **Google Test**: Testing framework (automatically fetched by CMake)
+- **Google Benchmark**: Performance measurement (automatically fetched by CMake)
+
 ## Acknowledgments
 
 - Built with modern C++23 features
 - Uses Google Test for testing
 - Uses Google Benchmark for performance measurement
+- Uses rang.hpp for colored terminal output
 - Inspired by classic Prolog implementations like SWI-Prolog and GNU Prolog

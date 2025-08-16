@@ -2,6 +2,7 @@
 
 # CppLProlog System Demonstration Script
 # Showcases the best aspects of the C++23 Prolog interpreter
+# Uses rang.hpp for colored output in C++ components
 # Author: Christian
 
 set -e  # Exit on any error

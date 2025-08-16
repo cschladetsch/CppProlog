@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "builtin_predicates.h"
+#include <rang.hpp>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -16,8 +17,10 @@ Interpreter::Interpreter(bool interactive)
 void Interpreter::run() {
     if (!interactive_mode_) return;
     
-    std::cout << "CppLProlog Interpreter v1.0\n";
-    std::cout << "Type :help for commands, or enter Prolog queries.\n\n";
+    std::cout << rang::style::bold << rang::fg::cyan 
+              << "CppLProlog Interpreter v1.0" << rang::style::reset << "\n";
+    std::cout << "Type " << rang::fg::yellow << ":help" << rang::style::reset 
+              << " for commands, or enter Prolog queries.\n\n";
     
     while (true) {
         std::string input = readInput("?- ");

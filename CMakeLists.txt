@@ -24,6 +24,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(benchmark)
 
+# Add rang header-only library
+add_subdirectory(External/rang)
+
 add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(examples)
