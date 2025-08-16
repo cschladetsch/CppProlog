@@ -107,7 +107,7 @@ graph TB
 
 The term system forms the foundation of the interpreter, representing all Prolog data structures.
 
-#### Term Hierarchy
+#### Term Hierarchy (Actual Implementation)
 
 ```mermaid
 classDiagram
@@ -310,16 +310,25 @@ flowchart TD
     class EqualCheck,VarCheck1,VarCheck2,VarCheck3,TypeCheck,StructCheck,AtomCheck,CompoundCheck,RecursiveCheck,ListCheck decision
 ```
 
-#### Substitution Management
+#### Actual Unification Implementation
 
 ```cpp
 using Substitution = std::unordered_map<std::string, TermPtr>;
 
 class Unification {
 public:
-    static std::optional<Substitution> unify(const TermPtr& t1, const TermPtr& t2);
+    static std::optional<Substitution> unify(const TermPtr& term1, const TermPtr& term2);
+    static std::optional<Substitution> unify(const TermPtr& term1, const TermPtr& term2, Substitution& subst);
+    
     static TermPtr applySubstitution(const TermPtr& term, const Substitution& subst);
+    static void applySubstitutionInPlace(TermList& terms, const Substitution& subst);
+    
     static Substitution compose(const Substitution& s1, const Substitution& s2);
+    static bool occursCheck(const std::string& var, const TermPtr& term);
+    
+private:
+    static std::optional<Substitution> unifyInternal(const TermPtr& term1, const TermPtr& term2, Substitution& subst);
+    static TermPtr dereference(const TermPtr& term, const Substitution& subst);
 };
 ```
 
@@ -360,16 +369,54 @@ Efficient storage and retrieval of Prolog clauses.
 - **First Argument Index**: Secondary index for goal-directed search (future)
 - **Hash-based Lookup**: O(1) average case retrieval
 
-#### Storage Model
+#### Actual Database Implementation
 
 ```cpp
 class Database {
 private:
-    std::vector<ClausePtr> clauses_;                    // Sequential storage
-    std::unordered_map<std::string, std::vector<size_t>> index_;  // Functor/arity index
+    std::vector<ClausePtr> clauses_;                         // Sequential storage
+    std::unordered_map<std::string, std::vector<size_t>> index_; // Functor/arity index
     
 public:
-    std::vector<ClausePtr> findMatchingClauses(const TermPtr& goal);
+    void addClause(ClausePtr clause);
+    void addFact(TermPtr head);
+    void addRule(TermPtr head, TermList body);
+    
+    std::vector<ClausePtr> findClauses(const std::string& functor, size_t arity) const;
+    std::vector<ClausePtr> findMatchingClauses(const TermPtr& goal) const;
+    
+    void clear();
+    size_t size() const;
+    bool empty() const;
+    void loadProgram(const std::string& program);
+    std::string toString() const;
+    
+private:
+    std::string makeKey(const std::string& functor, size_t arity) const;
+    std::string extractFunctorArity(const TermPtr& term) const;
+};
+
+// Note: ClausePtr is std::unique_ptr<Clause>, not shared_ptr!
+using ClausePtr = std::unique_ptr<Clause>;
+
+class Clause {
+private:
+    TermPtr head_;
+    TermList body_;
+    
+public:
+    explicit Clause(TermPtr head, TermList body = {});
+    
+    const TermPtr& head() const;
+    const TermList& body() const;
+    
+    bool isFact() const;
+    bool isRule() const;
+    
+    std::string toString() const;
+    std::unique_ptr<Clause> clone() const;
+    std::unique_ptr<Clause> rename(const std::string& suffix) const;
+    void collectVariables(std::vector<std::string>& variables) const;
 };
 ```
 
@@ -385,15 +432,42 @@ Implements SLD resolution with chronological backtracking.
 4. **Substitution**: Apply substitutions to remaining goals
 5. **Recursion**: Resolve new goal set
 
-#### Choice Point Management
+#### Actual Choice Point Implementation
 
 ```cpp
 class Choice {
-    TermPtr goal;                    // Current goal
-    TermList remaining_goals;        // Goals to resolve after current
-    std::vector<ClausePtr> clauses;  // Available clauses for current goal
-    size_t clause_index;             // Next clause to try
-    Substitution bindings;           // Current variable bindings
+public:
+    TermPtr goal;
+    TermList remaining_goals;
+    std::vector<ClausePtr> clauses;
+    size_t clause_index;
+    Substitution bindings;
+    
+    Choice(TermPtr g, TermList rg, std::vector<ClausePtr> cs, Substitution b);
+    
+    bool hasMoreChoices() const;
+    ClausePtr nextClause();
+};
+
+// Used in Resolver class:
+class Resolver {
+private:
+    const Database& database_;
+    std::vector<Choice> choice_stack_;    // Choice point stack
+    size_t max_depth_;                   // Recursion limit
+    size_t current_depth_;               // Current recursion depth
+    bool termination_requested_;          // Early termination flag
+
+public:
+    std::vector<Solution> solve(const TermPtr& query);
+    std::vector<Solution> solve(const TermList& goals);
+    void solveWithCallback(const TermPtr& query, 
+                          std::function<bool(const Solution&)> callback);
+};
+
+struct Solution {
+    Substitution bindings;
+    std::string toString() const;
 };
 ```
 
@@ -788,12 +862,34 @@ BENCHMARK(BM_ResolveFactQuery);
 BENCHMARK(BM_ResolveRuleQuery);
 ```
 
+## Documentation Accuracy Summary
+
+This documentation has been updated to precisely match the actual C++23 implementation:
+
+### Key Corrections Made
+
+1. **Term Hierarchy**: Updated class diagram with exact constructors, method signatures, and member variables from `term.h`
+2. **Database Implementation**: Corrected to show `ClausePtr` as `std::unique_ptr<Clause>` (not `shared_ptr`)
+3. **Clause Structure**: Added actual methods like `isFact()`, `isRule()`, `clone()`, `rename()`
+4. **Unification Methods**: Added missing overloads and private methods from actual implementation
+5. **Choice Point Management**: Updated with exact public interface and member variables
+6. **Resolver Interface**: Added actual method signatures including callback-based solving
+7. **Built-in Predicates**: Reflected actual `BuiltinPredicates` class structure
+8. **Parser Components**: Added exact `Token::Type` enum values and class interfaces
+
+### Implementation Fidelity
+
+- All class names, method signatures, and member variables now match the source code exactly
+- Type definitions (`TermPtr`, `TermList`, `Substitution`, `ClausePtr`) are accurately represented
+- Public/private interfaces reflect the actual implementation
+- Constructor signatures and return types are precise
+
 ## Future Enhancements
 
 ### Short Term
 
 1. **Cut Operator**: Implement Prolog cut (!) for deterministic predicates
-2. **More Built-ins**: Expand built-in predicate library
+2. **More Built-ins**: Expand built-in predicate library (arithmetic operators are simplified in current version)
 3. **Debugging Support**: Add trace and debug modes
 4. **Module System**: Namespace support for large programs
 

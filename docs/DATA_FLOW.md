@@ -31,7 +31,7 @@ sequenceDiagram
     
     Note over Interpreter: Extract query variables: {X}
     
-    Interpreter->>+Database: findMatchingClauses("parent/2")
+    Interpreter->>+Database: findMatchingClauses(parent(tom,X))
     Database->>Database: lookupByFunctor("parent")
     Database->>Database: filterByArity(2)
     Database-->>-Interpreter: [parent(tom,bob), parent(tom,liz), parent(bob,ann)]
