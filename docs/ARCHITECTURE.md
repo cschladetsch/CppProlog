@@ -2,36 +2,86 @@
 
 This document describes the internal architecture and design decisions of the CppLProlog interpreter.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [System Architecture](#system-architecture)
+- [Component Details](#component-details)
+  - [Term System](#term-system-srcprologtermhcpp)
+  - [Unification Engine](#unification-engine-srcprologunificationhcpp)
+  - [Parser](#parser-srcprologparserhcpp)
+  - [Database](#database-srcprologdatabasehcpp)
+  - [Resolution Engine](#resolution-engine-srcprologresolverhcpp)
+  - [Built-in Predicates](#built-in-predicates-srcprologbuiltin_predicateshcpp)
+  - [Interpreter](#interpreter-srcprologinterpreterhcpp)
+- [Memory Management](#memory-management)
+- [Error Handling](#error-handling)
+- [Thread Safety](#thread-safety)
+- [Extension Points](#extension-points)
+- [Testing Architecture](#testing-architecture)
+- [Benchmarking](#benchmarking)
+- [Future Enhancements](#future-enhancements)
+
+For visual data flow diagrams, see [Data Flow Documentation](DATA_FLOW.md).
+
 ## Overview
 
 CppLProlog is designed as a modular, high-performance Prolog interpreter using modern C++23 features. The architecture follows clean separation of concerns with well-defined interfaces between components.
 
-## Core Architecture
+## System Architecture
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Interpreter   │───▶│    Database     │───▶│    Resolver     │
-│                 │    │                 │    │                 │
-│  - REPL         │    │  - Clause Store │    │  - SLD Resolve  │
-│  - Query Exec   │    │  - Indexing     │    │  - Backtracking │
-│  - File Loading │    │  - Retrieval    │    │  - Choice Points│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │              ┌─────────────────┐             │
-         └─────────────▶│     Parser      │◀────────────┘
-                        │                 │
-                        │  - Lexer        │
-                        │  - AST Builder  │
-                        │  - Error Handle │
-                        └─────────────────┘
-                                 │
-                        ┌─────────────────┐
-                        │   Term System   │
-                        │                 │
-                        │  - Term Types   │
-                        │  - Unification  │
-                        │  - Substitution │
-                        └─────────────────┘
+```mermaid
+graph TD
+    A[Interpreter] --> B[Database]
+    A --> C[Parser]
+    A --> D[Resolver]
+    B --> D
+    C --> E[Term System]
+    D --> F[Unification Engine]
+    E --> F
+    D --> G[Built-in Predicates]
+    
+    A["`**Interpreter**
+    - REPL Interface
+    - Query Execution
+    - File Loading
+    - Error Handling`"]
+    
+    B["`**Database**
+    - Clause Storage
+    - Functor/Arity Indexing
+    - Fast Retrieval
+    - Memory Management`"]
+    
+    C["`**Parser**
+    - Lexical Analysis
+    - Syntax Analysis
+    - AST Building
+    - Error Recovery`"]
+    
+    D["`**Resolver**
+    - SLD Resolution
+    - Backtracking
+    - Choice Points
+    - Goal Management`"]
+    
+    E["`**Term System**
+    - Term Hierarchy
+    - Type Safety
+    - Immutable Design
+    - Hash Support`"]
+    
+    F["`**Unification**
+    - Robinson's Algorithm
+    - Occurs Check
+    - Substitution Composition
+    - Variable Binding`"]
+    
+    G["`**Built-ins**
+    - Arithmetic
+    - Comparison
+    - Type Checking
+    - I/O Operations`"]
 ```
 
 ## Component Details
@@ -42,15 +92,67 @@ The term system forms the foundation of the interpreter, representing all Prolog
 
 #### Term Hierarchy
 
-```cpp
-Term (abstract base)
-├── Atom
-├── Variable  
-├── Integer
-├── Float
-├── String
-├── Compound
-└── List
+```mermaid
+classDiagram
+    class Term {
+        <<abstract>>
+        +getType() TermType
+        +toString() string
+        +hash() size_t
+        +equals(Term) bool
+        +clone() TermPtr
+        +isGround() bool
+        +getVariables() set~string~
+    }
+    
+    class Atom {
+        -name: string
+        +getName() string
+    }
+    
+    class Variable {
+        -name: string
+        +getName() string
+    }
+    
+    class Integer {
+        -value: long long
+        +getValue() long long
+    }
+    
+    class Float {
+        -value: double
+        +getValue() double
+    }
+    
+    class String {
+        -value: string
+        +getValue() string
+    }
+    
+    class Compound {
+        -functor: string
+        -arguments: vector~TermPtr~
+        +getFunctor() string
+        +getArguments() vector~TermPtr~
+        +getArity() size_t
+    }
+    
+    class List {
+        -elements: vector~TermPtr~
+        -tail: TermPtr
+        +getElements() vector~TermPtr~
+        +getTail() TermPtr
+        +isEmpty() bool
+    }
+    
+    Term <|-- Atom
+    Term <|-- Variable
+    Term <|-- Integer
+    Term <|-- Float
+    Term <|-- String
+    Term <|-- Compound
+    Term <|-- List
 ```
 
 #### Key Design Decisions
@@ -75,12 +177,40 @@ TermPtr makeCompound(const std::string& functor, TermList arguments);
 
 Implements Robinson's unification algorithm with occurs check.
 
-#### Algorithm
+#### Unification Algorithm
 
-1. **Dereference**: Follow variable bindings in substitution
-2. **Variable Handling**: Unify variables with terms or other variables
-3. **Structure Unification**: Recursively unify compound terms
-4. **Occurs Check**: Prevent infinite structures (X = f(X))
+```mermaid
+flowchart TD
+    A[Unify Terms T1, T2] --> B[Dereference T1, T2]
+    B --> C{T1 == T2?}
+    C -->|Yes| D[Success: Empty Substitution]
+    C -->|No| E{T1 is Variable?}
+    E -->|Yes| F{T2 is Variable?}
+    F -->|Yes| G[Success: T1 = T2]
+    F -->|No| H[Occurs Check: T1 in T2?]
+    H -->|Yes| I[Failure: Infinite Structure]
+    H -->|No| J[Success: T1 = T2]
+    E -->|No| K{T2 is Variable?}
+    K -->|Yes| L[Occurs Check: T2 in T1?]
+    L -->|Yes| I
+    L -->|No| M[Success: T2 = T1]
+    K -->|No| N{Both Compound?}
+    N -->|No| O[Failure: Type Mismatch]
+    N -->|Yes| P[Same Functor/Arity?]
+    P -->|No| O
+    P -->|Yes| Q[Unify Arguments Recursively]
+    Q --> R{All Arguments Unified?}
+    R -->|No| O
+    R -->|Yes| S[Success: Compose Substitutions]
+    
+    style D fill:#c8e6c9
+    style G fill:#c8e6c9
+    style J fill:#c8e6c9
+    style M fill:#c8e6c9
+    style S fill:#c8e6c9
+    style I fill:#ffcdd2
+    style O fill:#ffcdd2
+```
 
 #### Substitution Management
 
@@ -169,21 +299,41 @@ class Choice {
 };
 ```
 
-#### Backtracking Algorithm
+#### SLD Resolution Algorithm
 
-```cpp
-bool Resolver::solveGoals(const TermList& goals, const Substitution& bindings) {
-    if (goals.empty()) {
-        // Success - all goals resolved
-        return callback(Solution{bindings});
-    }
+```mermaid
+flowchart TD
+    A[Start: Goals + Bindings] --> B{Goals Empty?}
+    B -->|Yes| C[Success: Return Solution]
+    B -->|No| D[Take First Goal]
+    D --> E[Find Matching Clauses]
+    E --> F{Clauses Available?}
+    F -->|No| G[Failure: Backtrack]
+    F -->|Yes| H[Select Next Clause]
+    H --> I[Rename Variables]
+    I --> J[Unify Goal with Head]
+    J --> K{Unification Success?}
+    K -->|No| L{More Clauses?}
+    L -->|Yes| H
+    L -->|No| G
+    K -->|Yes| M[Apply Substitution]
+    M --> N[Add Body Goals]
+    N --> O[Push Choice Point]
+    O --> P[Recursive Call]
+    P --> Q{Solution Found?}
+    Q -->|Yes| R[Report Solution]
+    Q -->|No| S{Backtrack?}
+    S -->|Yes| T[Pop Choice Point]
+    T --> L
+    S -->|No| G
+    R --> U{Continue Search?}
+    U -->|Yes| S
+    U -->|No| V[Complete]
     
-    // Try to resolve first goal
-    auto matching_clauses = database_.findMatchingClauses(goals[0]);
-    pushChoice(goals[0], remaining_goals, matching_clauses, bindings);
-    
-    return backtrack();
-}
+    style A fill:#e3f2fd
+    style C fill:#c8e6c9
+    style G fill:#ffcdd2
+    style V fill:#f3e5f5
 ```
 
 ### Built-in Predicates (`src/prolog/builtin_predicates.h/cpp`)
@@ -214,8 +364,28 @@ High-level interface combining all components.
 
 #### Query Processing Pipeline
 
-```
-User Input → Parser → Query Term → Resolver → Solutions → Output Formatter
+```mermaid
+flowchart LR
+    A[User Input] --> B[Lexer]
+    B --> C[Parser]
+    C --> D[Query Term]
+    D --> E[Database Lookup]
+    E --> F[Resolver]
+    F --> G{More Solutions?}
+    G -->|Yes| H[Backtrack]
+    H --> E
+    G -->|No| I[Format Output]
+    I --> J[Display Results]
+    
+    F --> K[Unification]
+    K --> L[Apply Substitution]
+    L --> M[Recursive Goals]
+    M --> F
+    
+    style A fill:#e1f5fe
+    style J fill:#e8f5e8
+    style G fill:#fff3e0
+    style H fill:#fce4ec
 ```
 
 #### Interactive Mode
@@ -225,6 +395,36 @@ User Input → Parser → Query Term → Resolver → Solutions → Output Forma
 - **Error Handling**: Graceful error recovery and reporting
 
 ## Memory Management
+
+### Memory Architecture
+
+```mermaid
+graph TD
+    A[Term Factory] --> B[shared_ptr Pool]
+    B --> C[Term Objects]
+    C --> D[Reference Counting]
+    D --> E{Ref Count = 0?}
+    E -->|Yes| F[Automatic Cleanup]
+    E -->|No| G[Keep Alive]
+    
+    H[Clause Factory] --> I[unique_ptr Storage]
+    I --> J[Clause Objects]
+    J --> K[RAII Management]
+    K --> L[Scope-based Cleanup]
+    
+    M[Database] --> N[Vector Storage]
+    N --> O[Contiguous Memory]
+    O --> P[Cache Locality]
+    
+    Q[Substitution Maps] --> R[unordered_map]
+    R --> S[Variable Bindings]
+    S --> T[Copy Semantics]
+    
+    style F fill:#c8e6c9
+    style L fill:#c8e6c9
+    style P fill:#e8f5e8
+    style T fill:#fff3e0
+```
 
 ### Strategy
 

@@ -2,6 +2,10 @@
 
 This directory contains example Prolog programs and C++ applications demonstrating the CppLProlog interpreter.
 
+For architectural details and data flow diagrams, see:
+- [System Architecture](../docs/ARCHITECTURE.md)
+- [Data Flow Documentation](../docs/DATA_FLOW.md)
+
 ## Structure
 
 - **Prolog Files (*.pl)**: Pure Prolog programs that can be loaded by the interpreter

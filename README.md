@@ -59,7 +59,7 @@ make -j$(nproc)
 
 ## Architecture
 
-The interpreter consists of several key components:
+The interpreter consists of several key components working together to provide a complete Prolog environment.
 
 ### Core Components
 
@@ -69,6 +69,14 @@ The interpreter consists of several key components:
 - **Resolution Engine**: SLD resolution with backtracking and choice points
 - **Database**: Indexed clause storage with efficient retrieval
 - **Built-in Predicates**: Extensive library of built-in predicates
+
+### Documentation
+
+For detailed architecture information, see:
+
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - Complete system architecture with Mermaid diagrams
+- **[Data Flow Diagrams](docs/DATA_FLOW.md)** - Visual representation of data flow through components
+- **[API Reference](docs/API.md)** - Detailed API documentation
 
 ### Key Classes
 
