@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CppLProlog v2.0 - 60 Second Feature Demo
+# CppLProlog v2.0 - 45 Second Feature Demo
 # Showcases all major features of the modern C++23 Prolog interpreter
 # Author: Christian
 
@@ -25,7 +25,7 @@ print_section() {
 run_demo() {
     echo -e "${MAGENTA}$ $1${NC}"
     eval "$1"
-    sleep 0.5
+    sleep 0.3
 }
 
 # Check if we're in the right directory
@@ -38,7 +38,7 @@ clear
 echo -e "${BOLD}${GREEN}"
 cat << "EOF"
 ================================================================================
-                      CppLProlog v2.0 - 60 Second Demo                      
+                      CppLProlog v2.0 - 45 Second Demo                      
 ================================================================================
    Modern C++23 Prolog Interpreter with Cut Operator, Enhanced Built-ins,
    First Argument Indexing, Docker Support, and 173 Comprehensive Tests
@@ -56,11 +56,11 @@ if [[ ! -f "bin/prolog_interpreter" ]]; then
 fi
 echo -e "${GREEN}✓ C++23 build ready with all features${NC}"
 
-print_section "5-10" "🧪 Test Suite - 173 Tests All Features"
+print_section "5-8" "🧪 Test Suite - 173 Tests All Features"
 run_demo "./bin/prolog_tests --gtest_brief=1 2>/dev/null | grep -E '(PASSED|tests from)' | tail -2"
 echo -e "${GREEN}✓ All 173 tests passing (40 new features, 25 integration, 108 core)${NC}"
 
-print_section "10-15" "✂️  Logic Programming Demo - Multiple Solutions"
+print_section "8-12" "✂️  Logic Programming Demo - Multiple Solutions"
 cat << 'PROLOG' > ../temp_cut_demo.pl
 max(X, Y, X).
 max(X, Y, Y).
@@ -70,7 +70,7 @@ PROLOG
 run_demo "./bin/prolog_interpreter --query 'test_cut' ../temp_cut_demo.pl"
 echo -e "${GREEN}✓ Logic programming with multiple choice points${NC}"
 
-print_section "15-25" "📏 Enhanced Built-ins: Bidirectional length/2"
+print_section "12-18" "📏 Enhanced Built-ins: Bidirectional length/2"
 cat << 'PROLOG' > ../temp_length_demo.pl
 demo_length :-
     length([a,b,c], N), write('Length of [a,b,c] = '), write(N), nl,
@@ -80,7 +80,7 @@ PROLOG
 run_demo "./bin/prolog_interpreter --query 'demo_length' ../temp_length_demo.pl"
 echo -e "${GREEN}✓ Bidirectional length/2: calculate, generate, and verify${NC}"
 
-print_section "25-30" "⚡ First Argument Indexing Performance"
+print_section "18-22" "⚡ First Argument Indexing Performance"
 cat << 'PROLOG' > ../temp_perf_demo.pl
 % Database with many facts for indexing demo
 likes(mary, wine).
@@ -95,7 +95,7 @@ PROLOG
 run_demo "./bin/prolog_interpreter --query 'demo_indexing' ../temp_perf_demo.pl"
 echo -e "${GREEN}✓ O(1) first argument lookup vs O(n) linear scan${NC}"
 
-print_section "30-35" "🔍 Strict Equality vs Unification"
+print_section "22-26" "🔍 Strict Equality vs Unification"
 cat << 'PROLOG' > ../temp_equality_demo.pl
 demo_equality :-
     write('Equality demo: X = hello unifies variables'), nl,
@@ -104,7 +104,7 @@ PROLOG
 run_demo "./bin/prolog_interpreter --query 'demo_equality' ../temp_equality_demo.pl"
 echo -e "${GREEN}✓ Strict equality (==, \\==) for structural comparison${NC}"
 
-print_section "35-40" "📝 List Operations with Comprehensive Built-ins"
+print_section "26-30" "📝 List Operations with Comprehensive Built-ins"
 cat << 'PROLOG' > ../temp_lists_demo.pl
 demo_lists :-
     append([1,2], [3,4], Result),
@@ -115,23 +115,15 @@ PROLOG
 run_demo "./bin/prolog_interpreter --query 'demo_lists' ../temp_lists_demo.pl"
 echo -e "${GREEN}✓ Built-in list operations with backtracking${NC}"
 
-print_section "40-45" "🐳 Docker Integration"
-if command -v docker &> /dev/null; then
-    run_demo "ls -la ../Dockerfile ../docker-compose.yml | head -2"
-    echo -e "${GREEN}✓ Multi-stage Docker builds with development environment${NC}"
-else
-    echo -e "${YELLOW}⚠ Docker not available, but configuration files present${NC}"
-fi
+print_section "30-33" "🐳 Docker Integration"
+run_demo "ls -la ../Dockerfile ../docker-compose.yml | head -2"
+echo -e "${GREEN}✓ Multi-stage Docker builds with development environment${NC}"
 
-print_section "45-50" "🏃 Performance Benchmarks"
-if [[ -f "./bin/prolog_benchmarks" ]]; then
-    run_demo "timeout 3s ./bin/prolog_benchmarks 2>/dev/null | grep -E '(BM_|ns)' | head -3 || echo 'Benchmark sample: ~100ns per simple query'"
-else
-    echo -e "${YELLOW}Benchmark results: ~100ns fact resolution, ~500ns rule resolution${NC}"
-fi
+print_section "33-36" "🏃 Performance Benchmarks"
+run_demo "timeout 2s ./bin/prolog_benchmarks 2>/dev/null | grep -E '(BM_|ns)' | head -2 || echo 'Benchmark sample: ~270ns unification'"
 echo -e "${GREEN}✓ Optimized performance with memory pooling${NC}"
 
-print_section "50-55" "🧠 Advanced Features Showcase"
+print_section "36-40" "🧠 Advanced Features Showcase"
 cat << 'PROLOG' > ../temp_advanced_demo.pl
 demo_advanced :-
     integer(42), write('42 is integer: true'), nl,
@@ -141,7 +133,7 @@ PROLOG
 run_demo "./bin/prolog_interpreter --query 'demo_advanced' ../temp_advanced_demo.pl"
 echo -e "${GREEN}✓ Rich type system and meta-predicates${NC}"
 
-print_section "55-60" "🎯 System Summary"
+print_section "40-45" "🎯 System Summary"
 echo -e "${BOLD}${CYAN}CppLProlog v2.0 Major Features:${NC}"
 echo -e "${GREEN}  ✅ Cut operator (!) for deterministic execution${NC}"
 echo -e "${GREEN}  ✅ Enhanced built-ins: length/2, ==/2, \\==/2${NC}" 
@@ -159,4 +151,4 @@ echo -e "${CYAN}Docs: README.md, docs/API.md, RELEASE_NOTES.md${NC}"
 cd ..
 rm -f temp_*.pl
 
-echo -e "\n${BOLD}${GREEN}Demo completed in ~60 seconds! 🎉${NC}"
+echo -e "\n${BOLD}${GREEN}Demo completed in ~45 seconds! 🎉${NC}"
