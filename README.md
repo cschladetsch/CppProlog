@@ -2,9 +2,10 @@
 
 A modern, high-performance Prolog interpreter implemented in C++23 with comprehensive testing, benchmarking, and rich documentation. This implementation demonstrates the complexity and engineering effort required to recreate Prolog's declarative programming paradigm in C++.
 
-## Demo
+## Demos
 
-[Demo](resources/Demo2.gif)
+[Demo](resources/Demo1.gif)
+[Demo2](resources/Demo2.gif)
 
 ## Features
 
