@@ -1,3 +1,7 @@
+/CppSomething/gemini-venv
+
+target/
+
 # Build directories
 build/
 cmake-build-*/
