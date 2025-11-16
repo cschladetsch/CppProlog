@@ -334,22 +334,48 @@ private:
 
 ### Parser (`src/prolog/parser.h/cpp`)
 
-Two-phase parsing: lexical analysis followed by syntax analysis.
+The parser is responsible for transforming raw Prolog code into a structured Abstract Syntax Tree (AST) composed of `Term` objects. This process involves two main phases: lexical analysis (tokenization) and syntactic analysis (parsing).
 
-#### Lexer
+#### Lexical Analysis (Lexer)
 
-- **Token Types**: Atoms, variables, numbers, strings, operators, punctuation
-- **Comment Handling**: Skip % comments
-- **String Escaping**: Support for escape sequences
-- **Error Recovery**: Position tracking for error reporting
+The `Lexer` component reads the input Prolog code character by character and converts it into a stream of `Token` objects. Each token represents a meaningful unit in the Prolog syntax, such as an atom, variable, number, operator, or punctuation.
 
-#### Parser
+- **Token Types**: Atoms, variables, numbers, strings, operators, punctuation (e.g., `.` `,` `(` `)` `[` `]` `|` `:-`)
+- **Comment Handling**: Skips single-line comments starting with `%`.
+- **String Escaping**: Supports standard escape sequences within double-quoted strings.
+- **Position Tracking**: Maintains position information for accurate error reporting.
 
-- **Recursive Descent**: Clean, maintainable parsing strategy
-- **Operator Precedence**: Proper handling of Prolog operators
-- **Error Reporting**: Detailed syntax error messages
+**Example Lexical Analysis:**
 
-#### Grammar Support
+Input: `parent(X, Y) :- father(X, Y).`
+
+Tokens:
+- `ATOM` ("parent")
+- `LPAREN` ("(")
+- `VARIABLE` ("X")
+- `COMMA` (",")
+- `VARIABLE` ("Y")
+- `RPAREN` (")")
+- `RULE_OP` (":-")
+- `ATOM` ("father")
+- `LPAREN` ("(")
+- `VARIABLE` ("X")
+- `COMMA` (",")
+- `VARIABLE` ("Y")
+- `RPAREN` (")")
+- `DOT` (".")
+- `END_OF_INPUT`
+
+#### Syntactic Analysis (Parser)
+
+The `Parser` takes the stream of tokens from the `Lexer` and builds the Abstract Syntax Tree (AST). It uses a recursive descent parsing strategy, respecting operator precedence rules to correctly interpret Prolog terms and clauses.
+
+- **Recursive Descent**: A top-down parsing method that directly implements the grammar rules.
+- **AST Construction**: Creates a hierarchy of `TermPtr` objects (Atom, Variable, Compound, List, Integer, Float, String) representing the parsed Prolog structure.
+- **Operator Precedence**: Correctly handles the infix, prefix, and postfix operators defined in Prolog.
+- **Error Reporting**: Provides detailed syntax error messages, including the position of the error.
+
+**Grammar Support (Simplified):**
 
 ```prolog
 Clause    := Term '.' | Term ':-' TermList '.'
@@ -358,6 +384,19 @@ Compound  := Atom '(' TermList ')'
 List      := '[' TermList ']' | '[' TermList '|' Term ']'
 TermList  := Term (',' Term)*
 ```
+
+**Example AST Construction:**
+
+For the clause `parent(X, Y) :- father(X, Y).`, the parser would construct an AST roughly equivalent to:
+
+```
+Compound(":-", [
+    Compound("parent", [Variable("X"), Variable("Y")]),
+    Compound("father", [Variable("X"), Variable("Y")])
+])
+```
+
+This AST is then used by the Resolver for query execution.
 
 ### Database (`src/prolog/database.h/cpp`)
 
@@ -422,47 +461,88 @@ public:
 
 ### Resolution Engine (`src/prolog/resolver.h/cpp`)
 
-Implements SLD resolution with chronological backtracking.
+The `Resolver` is the core inference engine of CppLProlog, implementing SLD resolution with chronological backtracking. It takes a query (represented as a list of goals, which are `Term` objects from the AST) and attempts to find substitutions for variables that make the query true, utilizing clauses stored in the `Database` and the `Unification Engine`.
 
 #### Resolution Strategy
 
-1. **Goal Selection**: Left-to-right goal ordering
-2. **Clause Selection**: Database order with backtracking
-3. **Unification**: Attempt unification with each matching clause
-4. **Substitution**: Apply substitutions to remaining goals
-5. **Recursion**: Resolve new goal set
+1.  **Goal Selection**: Goals are selected from left to right within the current goal list.
+2.  **Clause Selection**: The resolver searches the `Database` for clauses whose head unifies with the selected goal. Clauses are tried in their order of appearance in the database.
+3.  **Unification**: For each matching clause, the `Unification Engine` attempts to unify the selected goal with the head of the clause. If successful, a substitution (variable bindings) is generated.
+4.  **Substitution Application**: The generated substitution is applied to the remaining goals in the query and to the body of the unifying clause.
+5.  **New Goal Set**: The selected goal is replaced by the (substituted) body goals of the unifying clause, forming a new set of goals to be resolved.
+6.  **Backtracking**: If a goal cannot be resolved (no unifying clauses, or subsequent goals fail), the resolver backtracks to the most recent choice point and tries an alternative clause.
+7.  **Cut Operator (`!`)**: The `cut_level` mechanism in `Choice` and `performCut()` in `Resolver` implement the Prolog cut operator, which prunes the search space by discarding certain choice points, preventing further backtracking beyond the cut.
 
 #### Actual Choice Point Implementation
 
 ```cpp
 class Choice {
 public:
-    TermPtr goal;
-    TermList remaining_goals;
-    std::vector<ClausePtr> clauses;
-    size_t clause_index;
-    Substitution bindings;
+    TermPtr goal;                // The goal being resolved at this choice point
+    TermList remaining_goals;    // Goals yet to be resolved in the current branch
+    std::vector<ClausePtr> clauses; // Candidate clauses for the current goal
+    size_t clause_index;         // Index of the next clause to try
+    Substitution bindings;       // Current variable bindings
+    size_t cut_level;            // The cut level associated with this choice point
     
-    Choice(TermPtr g, TermList rg, std::vector<ClausePtr> cs, Substitution b);
+    Choice(TermPtr g, TermList rg, std::vector<ClausePtr> cs, Substitution b, size_t cl = 0)
+        : goal(std::move(g)), remaining_goals(std::move(rg)), 
+          clauses(std::move(cs)), clause_index(0), bindings(std::move(b)), cut_level(cl) {}
     
-    bool hasMoreChoices() const;
-    ClausePtr nextClause();
+    bool hasMoreChoices() const {
+        return clause_index < clauses.size();
+    }
+    
+    ClausePtr nextClause() {
+        if (hasMoreChoices()) {
+            return std::move(clauses[clause_index++]);
+        }
+        return nullptr;
+    }
 };
 
 // Used in Resolver class:
 class Resolver {
 private:
     const Database& database_;
-    std::vector<Choice> choice_stack_;    // Choice point stack
-    size_t max_depth_;                   // Recursion limit
+    std::vector<Choice> choice_stack_;    // Manages backtracking points
+    size_t max_depth_;                   // Recursion limit to prevent infinite loops
     size_t current_depth_;               // Current recursion depth
-    bool termination_requested_;          // Early termination flag
+    bool termination_requested_;          // Flag to stop resolution early
+    size_t current_cut_level_;           // Tracks the current cut level
+    bool cut_encountered_;                // Flag to indicate if a cut has been encountered
 
 public:
+    explicit Resolver(const Database& db, size_t max_depth = 1000) 
+        : database_(db), max_depth_(max_depth), current_depth_(0), termination_requested_(false), 
+          current_cut_level_(0), cut_encountered_(false) {}
+    
     std::vector<Solution> solve(const TermPtr& query);
     std::vector<Solution> solve(const TermList& goals);
+    
     void solveWithCallback(const TermPtr& query, 
                           std::function<bool(const Solution&)> callback);
+    void solveWithCallback(const TermList& goals, 
+                          std::function<bool(const Solution&)> callback);
+    
+private:
+    bool solveGoals(const TermList& goals, const Substitution& bindings, 
+                   std::function<bool(const Solution&)> callback);
+    
+    void pushChoice(TermPtr goal, TermList remaining_goals, 
+                   std::vector<ClausePtr> clauses, Substitution bindings);
+    bool backtrack();
+    void performCut();  // Implements the cut operator logic
+    void setCutLevel(size_t level) { current_cut_level_ = level; }
+    
+    std::string renameVariables(size_t clause_id) const;
+    
+    // Helper function to collect variables from a term
+    void collectVariablesFromTerm(const TermPtr& term, std::vector<std::string>& variables) const;
+    
+    // Helper function to filter bindings to only include query variables
+    Substitution filterBindings(const Substitution& bindings, 
+                               const std::vector<std::string>& queryVariables) const;
 };
 
 struct Solution {
@@ -487,7 +567,7 @@ flowchart TD
     
     ClausesCheck -->|"❌ No"| Backtrack["⬅️ BACKTRACK<br/>Pop choice point<br/>Try alternative"]
     
-    ClausesCheck -->|"✅ Yes"| CreateChoice["💾 Create Choice Point<br/>Save: goal, remaining goals,<br/>clauses, bindings"]
+    ClausesCheck -->|"✅ Yes"| CreateChoice["💾 Create Choice Point<br/>Save: goal, remaining goals,<br/>clauses, bindings, cut_level"]
     
     CreateChoice --> SelectClause["📄 Select Next Clause<br/>Try clauses in order"]
     
@@ -501,7 +581,10 @@ flowchart TD
     MoreClauses -->|"✅ Yes"| SelectClause
     MoreClauses -->|"❌ No"| Backtrack
     
-    UnifyCheck -->|"✅ Yes"| ApplySubst["⚡ Apply Substitution<br/>Update variable bindings<br/>throughout goal set"]
+    UnifyCheck -->|"✅ Yes"| CheckCut{"✂️ Is current goal a Cut (`!`)?"}
+    CheckCut -->|"✅ Yes"| PerformCut["✂️ Perform Cut<br/>Discard choice points<br/>up to cut_level"]
+    PerformCut --> ApplySubst
+    CheckCut -->|"❌ No"| ApplySubst["⚡ Apply Substitution<br/>Update variable bindings<br/>throughout goal set"]
     
     ApplySubst --> AddBodyGoals["📝 Add Body Goals<br/>Replace current goal with<br/>clause body goals"]
     
@@ -529,7 +612,7 @@ flowchart TD
     BacktrackCheck -->|"❌ No"| Failure["❌ FAILURE<br/>No more alternatives<br/>Query has no solutions"]
     
     subgraph "Choice Point Stack"
-        CP["Choice Point {<br/>  goal: current_goal<br/>  remaining: [goal2, goal3, ...]<br/>  clauses: [clause1, clause2, ...]<br/>  index: current_clause_position<br/>  bindings: {X→a, Y→b, ...}<br/>}"]
+        CP["Choice Point {<br/>  goal: current_goal<br/>  remaining: [goal2, goal3, ...]<br/>  clauses: [clause1, clause2, ...]<br/>  index: current_clause_position<br/>  bindings: {X→a, Y→b, ...}<br/>  cut_level: N<br/>}"]
     end
     
     classDef success fill:#c8e6c9,stroke:#388e3c,stroke-width:3px
@@ -541,11 +624,38 @@ flowchart TD
     
     class Success,ReportSolution success
     class Failure failure
-    class SelectGoal,FindClauses,CreateChoice,SelectClause,RenameVars,AttemptUnify,ApplySubst,AddBodyGoals,PushChoice,RecursiveCall process
-    class EmptyCheck,ClausesCheck,UnifyCheck,MoreClauses,SolutionCheck,BacktrackDecision,ContinueSearch,BacktrackCheck decision
+    class SelectGoal,FindClauses,CreateChoice,SelectClause,RenameVars,AttemptUnify,ApplySubst,AddBodyGoals,PushChoice,RecursiveCall,PerformCut process
+    class EmptyCheck,ClausesCheck,UnifyCheck,MoreClauses,SolutionCheck,BacktrackDecision,ContinueSearch,BacktrackCheck,CheckCut decision
     class Backtrack,PopChoice backtrack
     class Complete complete
 ```
+
+#### Example Resolution:
+
+Consider the following Prolog program:
+
+```prolog
+father(john, mary).
+father(john, tom).
+parent(X, Y) :- father(X, Y).
+```
+
+And the query: `?- parent(john, Z).`
+
+1.  **Initial Goal**: `parent(john, Z)`
+2.  **Find Clauses**: The resolver finds `parent(X, Y) :- father(X, Y).`
+3.  **Unify**: `parent(john, Z)` unifies with `parent(X, Y)` with substitution `{X -> john, Y -> Z}`.
+4.  **New Goals**: The goal becomes `father(john, Z)` (after applying substitution to the body of the rule).
+5.  **Find Clauses (for `father(john, Z)`)**: The resolver finds `father(john, mary).`
+6.  **Unify**: `father(john, Z)` unifies with `father(john, mary)` with substitution `{Z -> mary}`.
+7.  **Goals Empty**: All goals resolved. A solution is found: `{Z -> mary}`.
+8.  **Backtrack (if more solutions requested)**: The resolver backtracks to the choice point for `father(john, Z)`.
+9.  **Find Next Clause**: The resolver finds `father(john, tom).`
+10. **Unify**: `father(john, Z)` unifies with `father(john, tom)` with substitution `{Z -> tom}`.
+11. **Goals Empty**: All goals resolved. Another solution is found: `{Z -> tom}`.
+12. **No More Choices**: No more clauses for `father/2`. Resolution completes.
+
+This example demonstrates how the Resolver, in conjunction with the Database and Unification Engine, navigates the search space to find all possible solutions to a query.```
 
 ### Built-in Predicates (`src/prolog/builtin_predicates.h/cpp`)
 
