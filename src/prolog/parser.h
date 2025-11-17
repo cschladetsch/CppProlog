@@ -14,7 +14,7 @@ public:
     enum Type {
         ATOM, VARIABLE, INTEGER, FLOAT, STRING,
         LPAREN, RPAREN, LBRACKET, RBRACKET,
-        DOT, COMMA, PIPE, RULE_OP,
+        DOT, COMMA, PIPE, RULE_OP, OPERATOR,
         END_OF_INPUT, INVALID
     };
     

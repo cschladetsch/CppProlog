@@ -58,6 +58,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(benchmark)
 
+FetchContent_Declare(
+    linenoise
+    GIT_REPOSITORY https://github.com/arangodb/linenoise-ng.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(linenoise)
+
 # Add rang header-only library
 add_subdirectory(External/rang)
 

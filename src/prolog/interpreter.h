@@ -6,6 +6,12 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <stdio.h>
+#include <stdlib.h>
+
+namespace linenoise {
+    class LineNoise;
+}
 
 namespace prolog {
 
