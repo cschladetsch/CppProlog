@@ -1,8 +1,32 @@
-% Test cut operator
-choice(1).
-choice(2).
-choice(3).
 
-first_choice(X) :- choice(X), !.
+p(X) :- q(X), !.
+p(c).
 
-test_cut_simple :- !, write('Cut worked'), nl.
+q(a).
+q(b).
+
+r(X) :- s(X), !.
+r(c).
+
+s(a).
+s(b).
+
+t(x).
+t(y) :- !.
+t(z).
+
+u(a,b).
+u(c,d) :- !.
+u(e,f).
+
+v(X,Y) :- w(X), !, x(Y).
+w(a).
+w(b).
+x(c).
+x(d).
+
+a(1).
+a(2).
+b(1).
+b(2).
+c(X,Y) :- a(X), !, b(Y).

@@ -136,81 +136,11 @@ void Interpreter::handleCommand(const std::string& command) {
     }
 }
 
-#include "interpreter.h"
-#include "builtin_predicates.h"
-#include <rang.hpp>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include "linenoise-ng/linenoise.hpp"
-
-namespace prolog {
-
-    // ... (rest of the file remains the same)
-
-    void Interpreter::handleCommand(const std::string& command) {
-    // ... (existing implementation)
-    }
-
-    std::string Interpreter::readInput(const std::string& prompt) const {
-    static linenoise::LineNoise ln;
-    static bool first_run = true;
-    if (first_run) {
-        first_run = false;
-        const auto path = "~/.cpp_prolog_history";
-        ln.SetHistory(path);
-        ln.SetKeyMap(linenoise::KeyMap::Vi);
-        ln.SetMultiLine(true);
-        ln.SetSyntaxHighlighting(true);
-        ln.SetSyntaxHighlighter([](const std::string& line) {
-            std::stringstream ss;
-            // Basic highlighting: keywords, literals, comments
-            // This is a simple example, a more robust solution would use a proper tokenizer
-            std::string current_word;
-            for (char c : line) {
-                if (std::isspace(c) || std::string("(),.").find(c) != std::string::npos) {
-                    if (!current_word.empty()) {
-                        if (current_word == ":-" || current_word == "is" || current_word == "not") {
-                            ss << rang::fg::magenta << current_word << rang::fg::reset;
-                        } else if (isupper(current_word[0])) {
-                            ss << rang::fg::yellow << current_word << rang::fg::reset;
-                        } else {
-                            ss << rang::fg::cyan << current_word << rang::fg::reset;
-                        }
-                        current_word.clear();
-                    }
-                    ss << c;
-                } else {
-                    current_word += c;
-                }
-            }
-            if (!current_word.empty()) {
-                 if (isupper(current_word[0])) {
-                    ss << rang::fg::yellow << current_word << rang::fg::reset;
-                } else {
-                    ss << rang::fg::cyan << current_word << rang::fg::reset;
-                }
-            }
-            return ss.str();
-        });
-    }
-
+std::string Interpreter::readInput(const std::string& prompt) const {
+    std::cout << prompt;
     std::string input;
-    std::stringstream prompt_ss;
-    prompt_ss << rang::fg::green << prompt << rang::fg::reset;
-    auto quit = ln.GetLine(prompt_ss.str().c_str(), input);
-
-    if (quit) {
-        return ":quit";
-    }
-
-    ln.AddHistory(input.c_str());
+    std::getline(std::cin, input);
     return input;
-}
-
-    void Interpreter::printSolutions(const std::vector<Solution>& solutions) const {
-    // ... (existing implementation)
-    }
 }
 
 void Interpreter::printSolutions(const std::vector<Solution>& solutions) const {

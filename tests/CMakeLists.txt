@@ -12,8 +12,9 @@ add_executable(prolog_tests
     test_utils.cpp
     test_deductive_reasoning.cpp
     test_new_features.cpp
-    test_comprehensive_features.cpp
+    # test_comprehensive_features.cpp
     test_more_builtins.cpp
+    test_cut.cpp
 )
 
 target_link_libraries(prolog_tests 

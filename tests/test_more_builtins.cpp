@@ -11,9 +11,7 @@ protected:
     Interpreter interpreter;
 
     void SetUp() override {
-        interpreter.loadString(R"(
-            :- discontiguous(test_case/1).
-        )");
+        // No setup needed for now, as the discontiguous directive is not supported.
     }
 
     std::vector<Solution> run_query(const std::string& query) {

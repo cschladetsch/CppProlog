@@ -61,8 +61,10 @@ public:
                           std::function<bool(const Solution&)> callback);
     
 private:
-    bool solveGoals(const TermList& goals, const Substitution& bindings, 
-                   std::function<bool(const Solution&)> callback);
+    // Return values:
+    // -1 = failed, 0 = succeeded without cut, 1 = succeeded with cut
+    int solveGoals(const TermList& goals, const Substitution& bindings,
+                   std::function<bool(const Solution&)> callback, size_t parent_cut_level);
     
     void pushChoice(TermPtr goal, TermList remaining_goals, 
                    std::vector<ClausePtr> clauses, Substitution bindings);
