@@ -24,6 +24,40 @@ public:
     Choice(TermPtr g, TermList rg, std::vector<ClausePtr> cs, Substitution b, size_t cl = 0)
         : goal(std::move(g)), remaining_goals(std::move(rg)), 
           clauses(std::move(cs)), clause_index(0), bindings(std::move(b)), cut_level(cl) {}
+
+    Choice(const Choice& other)
+        : goal(other.goal),
+          remaining_goals(other.remaining_goals),
+          clause_index(other.clause_index),
+          bindings(other.bindings),
+          cut_level(other.cut_level) {
+        clauses.reserve(other.clauses.size());
+        for (const auto& clause : other.clauses) {
+            clauses.push_back(clause ? clause->clone() : nullptr);
+        }
+    }
+
+    Choice& operator=(const Choice& other) {
+        if (this == &other) {
+            return *this;
+        }
+
+        goal = other.goal;
+        remaining_goals = other.remaining_goals;
+        clause_index = other.clause_index;
+        bindings = other.bindings;
+        cut_level = other.cut_level;
+
+        clauses.clear();
+        clauses.reserve(other.clauses.size());
+        for (const auto& clause : other.clauses) {
+            clauses.push_back(clause ? clause->clone() : nullptr);
+        }
+        return *this;
+    }
+
+    Choice(Choice&&) noexcept = default;
+    Choice& operator=(Choice&&) noexcept = default;
     
     bool hasMoreChoices() const {
         return clause_index < clauses.size();
