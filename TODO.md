@@ -6,6 +6,16 @@
 **Version**: 1.0.0  
 **Status**: 🚧 Active Development
 
+```mermaid
+flowchart LR
+    A[Current Sprint\nv1.1.0] --> B[Next Release\nv1.2.0]
+    B --> C[Future Releases\nv2.0.0+]
+    A --> D[Testing & Quality]
+    B --> D
+    C --> D
+    D --> E[Docs, CI, Security, UX]
+```
+
 ---
 
 ## 🎯 Current Sprint (v1.1.0) - December 2024

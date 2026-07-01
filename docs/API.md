@@ -16,6 +16,19 @@ This document provides a comprehensive reference for the CppLProlog C++ API.
 
 ## Core Classes
 
+```mermaid
+flowchart LR
+    TERM[Term system] --> UNIFY[Unification]
+    TERM --> PARSE[Parser]
+    PARSE --> DB[Database]
+    DB --> RES[Resolver]
+    UNIFY --> RES
+    RES --> INT[Interpreter]
+    BUILTIN[Builtin predicates] --> RES
+    BUILTIN --> INT
+    UTIL[Utilities] --> TERM
+```
+
 ### Namespaces
 
 All CppLProlog classes are in the `prolog` namespace:
